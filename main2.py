@@ -17,10 +17,6 @@ def parse_questions(content):
             question = ast.literal_eval(line.strip(','))
             if isinstance(question, tuple) and len(question) == 4:
                 valid_questions.append(question)
-        except SyntaxError as e:
-            st.error(f"Syntax error parsing line: {line}. Error: {e}")
-        except Exception as e:
-            st.error(f"Error parsing line: {line}. Error: {e}")
     return valid_questions
 
 # Function to generate questions from a given topic using OpenAI API
