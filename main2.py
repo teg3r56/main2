@@ -98,13 +98,13 @@ if generate_quiz and topic:
     
     console.text("Finalizing...")
 
-    quiz_generated = generate_questions_from_topic(topic)
-        if quiz_generated:
-            st.progress(1.0)
-            console.text("Quiz successfully generated. Starting quiz...")
-            st.experimental_rerun()
-        else:
-            console.text("Failed to generate quiz. Please try again.")
+quiz_generated = generate_questions_from_topic(topic)
+    if quiz_generated:
+        st.progress(1.0)
+        console.text("Quiz successfully generated. Starting quiz...")
+        st.experimental_rerun()
+    else:
+        console.text("Failed to generate quiz. Please try again.")
 
     if 'questions' in st.session_state and st.session_state.questions:
         question_tuple = st.session_state.questions[st.session_state.current_question_index]
