@@ -17,7 +17,9 @@ def parse_questions(content):
             question = ast.literal_eval(line.strip(','))
             if isinstance(question, tuple) and len(question) == 4:
                 valid_questions.append(question)
-        return valid_questions
+        except SyntaxError as e:
+        except Exception as e:
+    return valid_questions
 
 # Function to generate questions from a given topic using OpenAI API
 def generate_questions_from_topic(topic):
