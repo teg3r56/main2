@@ -5,10 +5,9 @@ import ast
 import random
 from openai import OpenAI
 
-# Initialize the OpenAI client with your API key
+# initialize api key
 client = OpenAI(api_key=(st.secrets["OPEN_API_KEY"]))
 
-# Function to parse questions from the content
 def parse_questions(content):
     try:
         valid_questions = ast.literal_eval(content)
@@ -24,7 +23,6 @@ def parse_questions(content):
         st.error(f"Error while parsing content: {e}")
         return None
 
-# Function to generate questions from a given topic using OpenAI API
 def generate_questions_from_topic(topic):
     try:
         response = client.chat.completions.create(
@@ -50,11 +48,10 @@ def generate_questions_from_topic(topic):
 
         content = response.choices[0].message.content.strip()
 
-        # Concatenate content if it's split into multiple lists
         if not content.startswith("[") or not content.endswith("]"):
             content = "[" + content.replace("]\n\n[", ", ") + "]"
 
-        # Parse the content into a list of questions
+        # parse content into a list of questions
         questions = parse_questions(content)
 
         if questions:
@@ -76,7 +73,7 @@ def generate_and_store_questions(topic):
         st.session_state.questions = questions
         st.session_state.current_question_index = 0
 
-# Streamlit Sidebar for input
+# sidebar for input
 st.sidebar.title("Quiz Generator")
 topic = st.sidebar.text_input("Enter the topic you want to create a quiz about:")
 generate_quiz = st.sidebar.button("Generate Quiz", on_click=generate_and_store_questions, args=(topic,))
@@ -86,13 +83,16 @@ if 'questions' in st.session_state and st.session_state.questions:
     question_tuple = st.session_state.questions[st.session_state.current_question_index]
     question, options, correct_answer_index, explanation = question_tuple
     st.write(question)
-    option = st.radio("Choices", options)
+    option = st.radio("Choices", options, key=f"option{st.session_state.current_question_index}")
 
     if st.button("Submit Answer"):
         if options.index(option) == correct_answer_index:
             st.success("Correct!")
+            # increment question index
             if st.session_state.current_question_index < len(st.session_state.questions) - 1:
                 st.session_state.current_question_index += 1
+                # reset the state of the radio buttons, re-run script
+                st.experimental_rerun()
             else:
                 st.balloons()
                 st.session_state.questions = []
