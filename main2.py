@@ -106,22 +106,41 @@ def main_screen():
             console.text("Failed to generate quiz. Please try again.")
 
     if 'questions' in st.session_state and st.session_state.questions:
-        if not st.session_state.show_next:
-            # Display the current question and options
-            question_tuple = st.session_state.questions[st.session_state.current_question_index]
-            question, options, correct_answer_index, explanation = question_tuple
-            st.write(question)
-            option = st.radio("Choices", options, key=f"option{st.session_state.current_question_index}")
-            submit_answer = st.button("Submit Answer")
-    
-            if submit_answer:
-                if options.index(option) == correct_answer_index:
-                    st.session_state.correct_answers += 1
-                    st.success("Correct!")
-                    time.sleep(0.5)  # Show success message for half a second
+        if st.session_state.show_next:
+            # The 'Next Question' button should be shown only after an answer is submitted.
+            if st.button("Next Question"):
+                st.session_state.current_question_index += 1
+                if st.session_state.current_question_index < len(st.session_state.questions):
+                    st.session_state.show_next = False  # Prepare to show the new question and hide the 'Next Question' button
+                    st.experimental_rerun()
                 else:
-                    st.error(f"Incorrect! {explanation}")
-                st.session_state.show_next = True  # Prepare to show the 'Next Question' button
+                    # Handle the end of the quiz
+                    st.balloons()
+                    st.write(f"Quiz Finished! You got {st.session_state.correct_answers} out of {len(st.session_state.questions)} correct.")
+                    if st.button("Restart Quiz"):
+                        st.session_state.questions = []
+                        st.session_state.correct_answers = 0
+                        st.session_state.current_question_index = 0
+                        st.session_state.show_next = False
+                        random.shuffle(st.session_state.questions)
+                        st.experimental_rerun()
+
+    else:
+        # Show the current question and options for answering
+        question_tuple = st.session_state.questions[st.session_state.current_question_index]
+        question, options, correct_answer_index, explanation = question_tuple
+        st.write(question)
+        option = st.radio("Choices", options, key=f"option{st.session_state.current_question_index}")
+        submit_answer = st.button("Submit Answer")
+
+        if submit_answer:
+            if options.index(option) == correct_answer_index:
+                st.session_state.correct_answers += 1
+                st.success("Correct!")
+            else:
+                st.error(f"Incorrect! {explanation}")
+            st.session_state.show_next = True  # Signal that the next question should be shown on the next rerun
+
     
         if st.session_state.show_next:
             # Display the 'Next Question' button
