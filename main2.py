@@ -6,7 +6,7 @@ import random
 from openai import OpenAI
 
 # Initialize the OpenAI client with your API key
-client = OpenAI(api_key=("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"))
+client = OpenAI(api_key=("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"))
 
 # Function to parse questions from the content
 def parse_questions(content):
