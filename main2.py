@@ -2,6 +2,7 @@ import streamlit as st
 import openai
 import ast
 import random
+import time
 from openai import OpenAI
 
 # Initialize the OpenAI client with your API key
@@ -75,16 +76,24 @@ def main_screen():
     st.title("Teague Coughlin Quiz Generator")
     topic = st.text_input("Enter the topic you want to create a quiz about:")
     generate_quiz = st.button("Generate Quiz")
+    console = st.empty()  
 
     if generate_quiz and topic:
-        with st.empty():
-            for percent_complete in range(100):
-                progress = min(1.0, 1 - 1 / (0.1 * percent_complete + 1))
+        # pseudo loading bar 
+        with st.empty():  
+            for percent_complete in range(101):
+                time_delay = 0.01 * (1.2 ** percent_complete)
+                progress = percent_complete / 100.0
                 st.progress(progress)
-                st.text(f"Loading... {int(100 * progress)}%")
+                console.text(f"Loading... {int(100 * progress)}%")
+                time.sleep(time_delay)
+        
         quiz_generated = generate_questions_from_topic(topic)
         if quiz_generated:
+            console.text("Quiz successfully generated. Starting quiz...")
             st.experimental_rerun()
+        else:
+            console.text("Failed to generate quiz. Please try again.")
 
     if 'questions' in st.session_state and st.session_state.questions:
         question_tuple = st.session_state.questions[st.session_state.current_question_index]
