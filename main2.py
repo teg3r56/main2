@@ -71,6 +71,7 @@ if 'questions' not in st.session_state:
     st.session_state.questions = []
     st.session_state.correct_answers = 0
     st.session_state.current_question_index = 0
+    st.session_state.show_next = False
 
 def main_screen():
     st.title("Teague Coughlin Quiz Generator")
@@ -79,28 +80,26 @@ def main_screen():
     console = st.empty()  # Placeholder for console messages
 
     if generate_quiz and topic:
-        # pseudo loading bar logic
         with st.empty():  # Placeholder for loading bar
             for percent_complete in range(101):
-                if percent_complete < 40:
-                    time_delay = 0.05  # Average speed
-                elif percent_complete < 85:
-                    time_delay = 0.1  # Starts slowing down a bit
-                else:
-                    time_delay = 0.2 * (percent_complete - 83)  # Exponentially slows down
-
+                time_delay = 0.1  # Start with a base delay
+                if percent_complete > 50:
+                    # Slow down incrementally after 50%
+                    time_delay += (percent_complete - 50) / 100.0
+                if percent_complete > 85:
+                    # Slow down exponentially after 85%
+                    time_delay += (percent_complete - 85) ** 2 / 10000.0
+                
                 progress = percent_complete / 100.0
                 st.progress(progress)
-                if percent_complete == 100:
-                    console.text("Loading... 100% - Quiz is ready!")
-                else:
-                    console.text(f"Loading... {percent_complete}%")
+                console.text(f"Loading... {percent_complete}%")
                 time.sleep(time_delay)
-
-        time.sleep(1)  # time taken to generate the quiz
+            
+            console.text("Finalizing...")
 
         quiz_generated = generate_questions_from_topic(topic)
         if quiz_generated:
+            st.progress(1.0)
             console.text("Quiz successfully generated. Starting quiz...")
             st.experimental_rerun()
         else:
@@ -112,24 +111,35 @@ def main_screen():
         st.write(question)
         option = st.radio("Choices", options, key=f"option{st.session_state.current_question_index}")
 
-        submit_answer = st.button("Submit Answer")
+        if not st.session_state.show_next:
+            submit_answer = st.button("Submit Answer")
+        else:
+            submit_answer = False
+
         if submit_answer:
             if options.index(option) == correct_answer_index:
                 st.session_state.correct_answers += 1
                 st.success("Correct!")
-                time.sleep(0.5)
+                time.sleep(0.5)  # Show success message for half a second
+                st.session_state.show_next = True
             else:
                 st.error(f"Incorrect! {explanation}")
-            if st.session_state.current_question_index < len(st.session_state.questions) - 1:
+                st.session_state.show_next = True
+
+        if st.session_state.show_next:
+            if st.button("Next Question"):
                 st.session_state.current_question_index += 1
-            else:
-                st.balloons()
-                st.write(f"Quiz Finished! You got {st.session_state.correct_answers} out of {len(st.session_state.questions)} correct.")
-                if st.button("Restart Quiz"):
-                    st.session_state.questions = []
-                    st.session_state.correct_answers = 0
-                    st.session_state.current_question_index = 0
-                    main_screen()
+                st.session_state.show_next = False
+                if st.session_state.current_question_index == len(st.session_state.questions):
+                    st.balloons()
+                    st.write(f"Quiz Finished! You got {st.session_state.correct_answers} out of {len(st.session_state.questions)} correct.")
+                    if st.button("Restart Quiz"):
+                        st.session_state.questions = []
+                        st.session_state.correct_answers = 0
+                        st.session_state.current_question_index = 0
+                        st.session_state.show_next = False
+                        random.shuffle(st.session_state.questions)  # Reshuffle questions
+                        st.experimental_rerun()
 
 if __name__ == "__main__":
     main_screen()
