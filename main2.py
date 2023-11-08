@@ -73,9 +73,6 @@ def generate_and_store_questions(topic):
         st.session_state.questions = questions
         st.session_state.current_question_index = 0
         
-if __name__ == "__main__":
-    main_screen()
-    
 def main_screen():
     st.title("Quiz Generator")
     topic = st.text_input("Enter the topic you want to create a quiz about:", key="topic")
@@ -101,3 +98,6 @@ def main_screen():
                     st.write("Quiz Finished! Start again?")
             else:
                 st.error(f"Incorrect! {explanation}")
+
+if __name__ == "__main__":
+    main_screen()
