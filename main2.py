@@ -10,18 +10,19 @@ client = OpenAI(api_key=(st.secrets["OPEN_API_KEY"]))
 
 # Function to parse questions from the content
 def parse_questions(content):
-    valid_questions = []
-    lines = content.split('\n')
-    for line in lines:
-        try:
-            question = ast.literal_eval(line.strip(','))
-            if isinstance(question, tuple) and len(question) == 4:
-                valid_questions.append(question)
-        except SyntaxError as e:
-            st.error(f"Syntax error parsing line: {line}. Error: {e}")
-        except Exception as e:
-            st.error(f"Error parsing line: {line}. Error: {e}")
-    return valid_questions
+    try:
+        valid_questions = ast.literal_eval(content)
+        if isinstance(valid_questions, list) and all(isinstance(question, tuple) and len(question) == 4 for question in valid_questions):
+            return valid_questions
+        else:
+            st.error("The API response is not in the expected format of a list of tuples.")
+            return None
+    except SyntaxError as e:
+        st.error(f"Syntax error while parsing content: {e}")
+        return None
+    except Exception as e:
+        st.error(f"Error while parsing content: {e}")
+        return None
 
 # Function to generate questions from a given topic using OpenAI API
 def generate_questions_from_topic(topic):
