@@ -82,7 +82,6 @@ def main_screen():
                 progress = min(1.0, 1 - 1 / (0.1 * percent_complete + 1))
                 st.progress(progress)
                 st.text(f"Loading... {int(100 * progress)}%")
-                time.sleep(0.1)
         quiz_generated = generate_questions_from_topic(topic)
         if quiz_generated:
             st.experimental_rerun()
