@@ -34,7 +34,7 @@ def generate_questions_from_topic(topic):
                     },
                 {
                     "role": "user", 
-                    "content": "Create as many needed multiple-choice questions about {topic}. "
+                    "content": f"Create as many needed multiple-choice questions about {topic}. "
                                                 "In this exact format, only one pair of brackets surrounding all questions: "
                                                 "[('question', ['options', 'options', 'options'], correct_option_index, 'explanation')] "
                                                 "Example: ["
