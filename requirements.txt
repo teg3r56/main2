@@ -1,5 +1,2 @@
 openai
-OpenAI
-openai==1.1.1
-pip install openai
-install openai
+streamlit
