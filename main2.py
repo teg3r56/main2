@@ -82,9 +82,9 @@ def main_screen():
     console = st.empty()  # Placeholder for console messages
 
     if generate_quiz and topic:
-        with st.empty():  # Placeholder for loading bar
-            for percent_complete in range(101):
-                time_delay = 0.07
+    with st.empty():  # Placeholder for loading bar
+        for percent_complete in range(101):
+            time_delay = 0.07  # Base delay
             if percent_complete > 50:
                 time_delay = 0.1 + (percent_complete - 50) * 0.02
             if percent_complete > 85:
@@ -96,7 +96,7 @@ def main_screen():
             console.text(f"Loading... {percent_complete}%")
             time.sleep(time_delay)
     
-        console.text("Finalizing...")
+    console.text("Finalizing...")
 
         quiz_generated = generate_questions_from_topic(topic)
         if quiz_generated:
