@@ -18,9 +18,9 @@ def parse_questions(content):
             if isinstance(question, tuple) and len(question) == 4:
                 valid_questions.append(question)
         except SyntaxError as e:
-            st.print(f"Syntax Error Occurred")
+            st.write(f'Syntax Error Occurred')
         except Exception as e:
-            st.print(f"Exception Occurred")
+            st.write(f'Exception Occurred')
     return valid_questions
 
 # Function to generate questions from a given topic using OpenAI API
