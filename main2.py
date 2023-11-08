@@ -76,18 +76,29 @@ def main_screen():
     st.title("Teague Coughlin Quiz Generator")
     topic = st.text_input("Enter the topic you want to create a quiz about:")
     generate_quiz = st.button("Generate Quiz")
-    console = st.empty()  
+    console = st.empty()  # Placeholder for console messages
 
     if generate_quiz and topic:
-        # pseudo loading bar 
-        with st.empty():  
+        # pseudo loading bar logic
+        with st.empty():  # Placeholder for loading bar
             for percent_complete in range(101):
-                time_delay = 0.01 * (1.2 ** percent_complete)
+                if percent_complete < 70:
+                    time_delay = 0.05  # Average speed
+                elif percent_complete < 85:
+                    time_delay = 0.1  # Starts slowing down a bit
+                else:
+                    time_delay = 0.2 * (percent_complete - 83)  # Exponentially slows down
+
                 progress = percent_complete / 100.0
                 st.progress(progress)
-                console.text(f"Loading... {int(100 * progress)}%")
+                if percent_complete == 100:
+                    console.text("Loading... 100% - Quiz is ready!")
+                else:
+                    console.text(f"Loading... {percent_complete}%")
                 time.sleep(time_delay)
-        
+
+        time.sleep(1)  # time taken to generate the quiz
+
         quiz_generated = generate_questions_from_topic(topic)
         if quiz_generated:
             console.text("Quiz successfully generated. Starting quiz...")
