@@ -91,7 +91,7 @@ def main_screen():
                     time_delay += (percent_complete - 50) / 100.0
                 if percent_complete > 94:
                     # Slow down exponentially after 85%
-                    time_delay = 0.2 * (1.05 ** percent_complete)
+                    time_delay = 0.1 * (1.05 ** percent_complete)
                 
                 progress = percent_complete / 100.0
                 st.progress(progress)
