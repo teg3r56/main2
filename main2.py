@@ -54,11 +54,11 @@ def generate_questions_from_topic(topic):
 
             questions = parse_questions(content)
 
-        if 'questions' not in st.session_state:
-            st.session_state.questions = []
-            st.session_state.correct_answers = 0
-            st.session_state.current_question_index = 0
-            st.session_state.show_next = False
+            if 'questions' not in st.session_state:
+                st.session_state.questions = []
+                st.session_state.correct_answers = 0
+                st.session_state.current_question_index = 0
+                st.session_state.show_next = False
 
 def main_screen():
     if 'show_next' not in st.session_state:
