@@ -82,7 +82,7 @@ def main_screen():
         # pseudo loading bar logic
         with st.empty():  # Placeholder for loading bar
             for percent_complete in range(101):
-                if percent_complete < 70:
+                if percent_complete < 40:
                     time_delay = 0.05  # Average speed
                 elif percent_complete < 85:
                     time_delay = 0.1  # Starts slowing down a bit
