@@ -24,7 +24,7 @@ def parse_questions(content):
         return None
 
 def generate_questions_from_topic(topic):
-    with st.spinner('Generating your quiz...'):
+    with st.spinner('Formating your quiz...'):
         try:
             response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
@@ -88,9 +88,9 @@ def main_screen():
                 if percent_complete > 50:
                     # Slow down incrementally after 50%
                     time_delay += (percent_complete - 50) / 100.0
-                if percent_complete > 85:
+                if percent_complete > 80:
                     # Slow down exponentially after 85%
-                    time_delay += (percent_complete - 85) ** 2 / 10000.0
+                    time_delay = 0.1 * (1.05 ** percent_complete)
                 
                 progress = percent_complete / 100.0
                 st.progress(progress)
