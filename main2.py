@@ -74,7 +74,7 @@ def generate_and_store_questions(topic):
         st.session_state.current_question_index = 0
         
 def main_screen():
-    st.title("Teagu Coughlin Quiz Generator")
+    st.title("Teague Coughlin Quiz Generator")
     topic = st.text_input("Enter the topic you want to create a quiz about:")
     generate_quiz = st.button("Generate Quiz")
 
