@@ -83,22 +83,25 @@ def main_screen():
 
     if generate_quiz and topic:
         with st.empty():  # Placeholder for loading bar
-            for percent_complete in range(101):
-                time_delay = 0.07  # Start with a base delay
-                if percent_complete > 50:
-                    # Slow down incrementally after 50%
-                    time_delay = 0.1
-                    time_delay += (percent_complete - 50) / 100.0
-                if percent_complete > 94:
-                    # Slow down exponentially after 85%
-                    time_delay = 0.1 * (1.05 ** percent_complete)
-                
-                progress = percent_complete / 100.0
-                st.progress(progress)
-                console.text(f"Loading... {percent_complete}%")
-                time.sleep(time_delay)
-            
-            console.text("Finalizing...")
+    for percent_complete in range(101):
+        # Base delay
+        time_delay = 0.07
+
+        # Incremental slow down after 50%
+        if percent_complete > 50:
+            time_delay = 0.1 + (percent_complete - 50) * 0.02
+
+        # Exponential slow down after 85%
+        if percent_complete > 85:
+            exponential_factor = (percent_complete - 85) / 15
+            time_delay += (2 ** exponential_factor) / 100  # Adjust the denominator for rate control
+        
+        progress = percent_complete / 100.0
+        st.progress(progress)
+        console.text(f"Loading... {percent_complete}%")
+        time.sleep(time_delay)
+
+    console.text("Finalizing...")
 
         quiz_generated = generate_questions_from_topic(topic)
         if quiz_generated:
