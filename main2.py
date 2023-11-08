@@ -84,11 +84,12 @@ def main_screen():
     if generate_quiz and topic:
         with st.empty():  # Placeholder for loading bar
             for percent_complete in range(101):
-                time_delay = 0.1  # Start with a base delay
+                time_delay = 0.07  # Start with a base delay
                 if percent_complete > 50:
                     # Slow down incrementally after 50%
+                    time_delay = 0.1
                     time_delay += (percent_complete - 50) / 100.0
-                if percent_complete > 80:
+                if percent_complete > 94:
                     # Slow down exponentially after 85%
                     time_delay = 0.2 * (1.05 ** percent_complete)
                 
