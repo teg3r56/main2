@@ -72,31 +72,32 @@ def generate_and_store_questions(topic):
     if questions:
         st.session_state.questions = questions
         st.session_state.current_question_index = 0
+        
+if __name__ == "__main__":
+    main_screen()
+    
+def main_screen():
+    st.title("Quiz Generator")
+    topic = st.text_input("Enter the topic you want to create a quiz about:", key="topic")
 
-# sidebar for input
-st.sidebar.title("Quiz Generator")
-topic = st.sidebar.text_input("Enter the topic you want to create a quiz about:")
-generate_quiz = st.sidebar.button("Generate Quiz", on_click=generate_and_store_questions, args=(topic,))
+    generate_quiz = st.button("Generate Quiz", on_click=generate_and_store_questions, args=(topic,), key="generate_quiz")
 
-# Main app logic
-if 'questions' in st.session_state and st.session_state.questions:
-    question_tuple = st.session_state.questions[st.session_state.current_question_index]
-    question, options, correct_answer_index, explanation = question_tuple
-    st.write(question)
-    option = st.radio("Choices", options, key=f"option{st.session_state.current_question_index}")
+    if 'questions' in st.session_state and st.session_state.questions:
+        question_tuple = st.session_state.questions[st.session_state.current_question_index]
+        question, options, correct_answer_index, explanation = question_tuple
+        st.write(question)
+        option = st.radio("Choices", options, key=f"option{st.session_state.current_question_index}")
 
-    if st.button("Submit Answer"):
-        if options.index(option) == correct_answer_index:
-            st.success("Correct!")
-            # increment question index
-            if st.session_state.current_question_index < len(st.session_state.questions) - 1:
-                st.session_state.current_question_index += 1
-                # reset the state of the radio buttons, re-run script
-                st.experimental_rerun()
+        if st.button("Submit Answer"):
+            if options.index(option) == correct_answer_index:
+                st.success("Correct!")
+                if st.session_state.current_question_index < len(st.session_state.questions) - 1:
+                    st.session_state.current_question_index += 1
+                    st.experimental_rerun()
+                else:
+                    st.balloons()
+                    st.session_state.questions = []
+                    st.session_state.current_question_index = 0
+                    st.write("Quiz Finished! Start again?")
             else:
-                st.balloons()
-                st.session_state.questions = []
-                st.session_state.current_question_index = 0
-                st.write("Quiz Finished! Start again?")
-        else:
-            st.error(f"Incorrect! {explanation}")
+                st.error(f"Incorrect! {explanation}")
