@@ -127,10 +127,13 @@ def main_screen():
                 st.session_state.show_next = True
 
         if st.session_state.show_next:
-            if st.button("Next Question"):
-                st.session_state.current_question_index += 1
-                st.session_state.show_next = False
-                if st.session_state.current_question_index == len(st.session_state.questions):
+            next_question = st.button("Next Question")
+            if next_question:
+                if st.session_state.current_question_index < len(st.session_state.questions) - 1:
+                    st.session_state.current_question_index += 1
+                    st.session_state.show_next = False
+                    st.experimental_rerun()
+                else:
                     st.balloons()
                     st.write(f"Quiz Finished! You got {st.session_state.correct_answers} out of {len(st.session_state.questions)} correct.")
                     if st.button("Restart Quiz"):
@@ -138,7 +141,7 @@ def main_screen():
                         st.session_state.correct_answers = 0
                         st.session_state.current_question_index = 0
                         st.session_state.show_next = False
-                        random.shuffle(st.session_state.questions)  # Reshuffle questions
+                        random.shuffle(st.session_state.questions)
                         st.experimental_rerun()
 
 if __name__ == "__main__":
