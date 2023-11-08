@@ -98,7 +98,7 @@ if generate_quiz and topic:
     
     console.text("Finalizing...")
 
-        quiz_generated = generate_questions_from_topic(topic)
+    quiz_generated = generate_questions_from_topic(topic)
         if quiz_generated:
             st.progress(1.0)
             console.text("Quiz successfully generated. Starting quiz...")
