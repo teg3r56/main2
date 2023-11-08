@@ -81,7 +81,7 @@ def main_screen():
     generate_quiz = st.button("Generate Quiz")
     console = st.empty()  # Placeholder for console messages
 
-    if generate_quiz and topic:
+if generate_quiz and topic:
     with st.empty():  # Placeholder for loading bar
         for percent_complete in range(101):
             time_delay = 0.07  # Base delay
