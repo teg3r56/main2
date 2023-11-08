@@ -3,9 +3,10 @@ import openai
 import os
 import ast
 import random
+from openai import OpenAI
 
-# Ensure the OPENAI_API_KEY environment variable is set in your operating system or environment
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# Initialize the OpenAI client with your API key
+client = OpenAI(api_key=("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"))
 
 # Function to parse questions from the content
 def parse_questions(content):
@@ -25,25 +26,34 @@ def parse_questions(content):
 # Function to generate questions from a given topic using OpenAI API
 def generate_questions_from_topic(topic):
     try:
-        chat_completion = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {
                     "role": "system",
-                    "content": "..."
-                },
+                    "content": "Generate a list of multiple-choice questions with answers and explanations. The output should be in the form of a Python list, with each question represented as a tuple. Each tuple should contain the question text, a list of options, the index of the correct option, and an explanation. There should only be one pair of brackets surrounding the entire list, and no additional brackets around individual tuples."
+                    },
                 {
-                    "role": "user",
-                    "content": f"Create questions about {topic}..."
-                }
+                    "role": "user", 
+                    "content": "Create as many needed multiple-choice questions about {topic}. "
+                                                "In this exact format, only one pair of brackets surrounding all questions: "
+                                                "[('question', ['options', 'options', 'options'], correct_option_index, 'explanation')] "
+                                                "Example: ["
+                                                "('How many valence electrons do elements in the Alkali metal family have?', "
+                                                "['1', '2', '3'], 0, 'Alkali metals belong to Group 1A and have 1 valence electron.'),"
+                                                "('What is the common oxidation state of Alkali metals?', ['+1', '+2', '0'], 0, "
+                                                "'Alkali metals have an oxidation state of +1 as they tend to lose one electron.')]"
+                     }
             ]
         )
 
-        content = chat_completion.choices[0].message["content"].strip()
+        content = response.choices[0].message.content.strip()
 
+        # Concatenate content if it's split into multiple lists
         if not content.startswith("[") or not content.endswith("]"):
             content = "[" + content.replace("]\n\n[", ", ") + "]"
 
+        # Parse the content into a list of questions
         questions = parse_questions(content)
 
         if questions:
@@ -55,22 +65,23 @@ def generate_questions_from_topic(topic):
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
         return None
+    
+if 'questions' not in st.session_state:
+    st.session_state.questions = []
+
+def generate_and_store_questions(topic):
+    questions = generate_questions_from_topic(topic)
+    if questions:
+        st.session_state.questions = questions
+        st.session_state.current_question_index = 0
 
 # Streamlit Sidebar for input
 st.sidebar.title("Quiz Generator")
 topic = st.sidebar.text_input("Enter the topic you want to create a quiz about:")
-generate_quiz = st.sidebar.button("Generate Quiz")
+generate_quiz = st.sidebar.button("Generate Quiz", on_click=generate_and_store_questions, args=(topic,))
 
 # Main app logic
-if 'questions' not in st.session_state:
-    st.session_state.questions = []
-    st.session_state.current_question_index = 0
-
-if generate_quiz and topic:
-    st.session_state.questions = generate_questions_from_topic(topic)
-    st.session_state.current_question_index = 0
-
-if st.session_state.questions:
+if 'questions' in st.session_state and st.session_state.questions:
     question_tuple = st.session_state.questions[st.session_state.current_question_index]
     question, options, correct_answer_index, explanation = question_tuple
     st.write(question)
@@ -79,12 +90,12 @@ if st.session_state.questions:
     if st.button("Submit Answer"):
         if options.index(option) == correct_answer_index:
             st.success("Correct!")
+            if st.session_state.current_question_index < len(st.session_state.questions) - 1:
+                st.session_state.current_question_index += 1
+            else:
+                st.balloons()
+                st.session_state.questions = []
+                st.session_state.current_question_index = 0
+                st.write("Quiz Finished! Start again?")
         else:
             st.error(f"Incorrect! {explanation}")
-        if st.session_state.current_question_index < len(st.session_state.questions) - 1:
-            st.session_state.current_question_index += 1
-        else:
-            st.balloons()
-            st.session_state.questions = []
-            st.session_state.current_question_index = 0
-            st.write("Quiz Finished! Start again?")
