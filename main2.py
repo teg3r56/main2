@@ -54,20 +54,20 @@ def generate_questions_from_topic(topic):
 
             questions = parse_questions(content)
 
-            if 'questions' not in st.session_state:
-                st.session_state.questions = []
-                st.session_state.correct_answers = 0
-                st.session_state.current_question_index = 0
-                st.session_state.show_next = False
+if 'questions' not in st.session_state:
+    st.session_state.questions = []
+    st.session_state.correct_answers = 0
+    st.session_state.current_question_index = 0
+    st.session_state.show_next = False
 
 def main_screen():
     if 'show_next' not in st.session_state:
         st.session_state.show_next = False
-        st.title("Teague Coughlin Quiz Generator")
-        topic = st.text_input("Enter the topic you want to create a quiz about:")
-        generate_quiz = st.button("Generate Quiz")
-        console = st.empty()  # Placeholder for console messages
-    
+    st.title("Teague Coughlin Quiz Generator")
+    topic = st.text_input("Enter the topic you want to create a quiz about:")
+    generate_quiz = st.button("Generate Quiz")
+    console = st.empty()  # Placeholder for console messages
+
     if generate_quiz and topic:
         with st.empty():  # Placeholder for loading bar
             for percent_complete in range(101):
@@ -77,21 +77,21 @@ def main_screen():
                 if percent_complete > 85:
                     exponential_factor = (percent_complete - 85) / 15
                     time_delay += (2 ** exponential_factor) / 100  # Adjust the denominator for rate control
-                    
+                
                 progress = percent_complete / 100.0
                 st.progress(progress)
                 console.text(f"Loading... {percent_complete}%")
                 time.sleep(time_delay)
-            
-            console.text("Finalizing...")
-    
-            quiz_generated = generate_questions_from_topic(topic)
-            if quiz_generated:
-                st.progress(1.0)
-                console.text("Quiz successfully generated. Starting quiz...")
-                st.experimental_rerun()
-            else:
-                console.text("Failed to generate quiz. Please try again.")    
+        
+        console.text("Finalizing...")
+
+        quiz_generated = generate_questions_from_topic(topic)
+        if quiz_generated:
+            st.progress(1.0)
+            console.text("Quiz successfully generated. Starting quiz...")
+            st.experimental_rerun()
+        else:
+            console.text("Failed to generate quiz. Please try again.")
 
     if 'questions' in st.session_state and st.session_state.questions:
         question_tuple = st.session_state.questions[st.session_state.current_question_index]
