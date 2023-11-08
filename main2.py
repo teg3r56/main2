@@ -77,7 +77,11 @@ def main_screen():
     st.title("Quiz Generator")
     topic = st.text_input("Enter the topic you want to create a quiz about:", key="topic")
 
-    generate_quiz = st.button("Generate Quiz", on_click=generate_and_store_questions, args=(topic,), key="generate_quiz")
+    if st.button("Generate Quiz", key="generate_quiz"):
+        if topic:  # Check if the topic is not empty
+            generate_and_store_questions(topic)
+        else:
+            st.error("Please enter a topic to generate the quiz.")
 
     if 'questions' in st.session_state and st.session_state.questions:
         question_tuple = st.session_state.questions[st.session_state.current_question_index]
@@ -98,6 +102,3 @@ def main_screen():
                     st.write("Quiz Finished! Start again?")
             else:
                 st.error(f"Incorrect! {explanation}")
-
-if __name__ == "__main__":
-    main_screen()
