@@ -32,7 +32,7 @@ def generate_questions_from_topic(topic):
                     {
                         "role": "system",
                         "content": "Generate a list of multiple-choice questions with answers and explanations. The output should be in the form of a Python list, with each question represented as a tuple. Each tuple should contain the question text, a list of options, the index of the correct option, and an explanation. There should only be one pair of brackets surrounding the entire list, and no additional brackets around individual tuples."
-                        },
+                    },
                     {
                         "role": "user", 
                         "content": f"Create as many needed multiple-choice questions about {topic}. "
@@ -43,7 +43,7 @@ def generate_questions_from_topic(topic):
                                                         "['1', '2', '3'], 0, 'Alkali metals belong to Group 1A and have 1 valence electron.'),"
                                                         "('What is the common oxidation state of Alkali metals?', ['+1', '+2', '0'], 0, "
                                                         "'Alkali metals have an oxidation state of +1 as they tend to lose one electron.')]"
-                        }
+                    }
                 ]
             )
 
@@ -53,6 +53,19 @@ def generate_questions_from_topic(topic):
                 content = "[" + content.replace("]\n\n[", ", ") + "]"
 
             questions = parse_questions(content)
+
+            if questions:
+                random.shuffle(questions)
+                st.session_state.questions = questions
+                st.session_state.current_question_index = 0
+                st.session_state.correct_answers = 0
+                return True
+            else:
+                st.error("Could not parse the API response into quiz questions.")
+                return False
+        except Exception as e:
+            st.error(f"An error occurred: {str(e)}")
+            return False
 
 if 'questions' not in st.session_state:
     st.session_state.questions = []
@@ -84,7 +97,6 @@ def main_screen():
                 time.sleep(time_delay)
         
         console.text("Finalizing...")
-
         quiz_generated = generate_questions_from_topic(topic)
         if quiz_generated:
             st.progress(1.0)
