@@ -119,37 +119,39 @@ def main_screen():
             handle_quiz_end()
             
 def display_grade_history_with_graph(current_quiz):
-    grade_history_container = st.expander("Grade History and Graph", expanded=True)
-    with grade_history_container:
-        if current_quiz:
-            scores = current_quiz.get('scores', [])
-            if scores:
-                score_values = [int(score.split()[0]) for score, _ in scores]
-                grades = [grade for _, grade in scores]
+    if current_quiz:
+        scores = current_quiz.get('scores', [])
+        if scores:
+            # Calculate percentage scores
+            score_percentages = [
+                (int(score.split()[0]) / len(current_quiz['questions'])) * 100 for score, _ in scores
+            ]
 
-                fig, ax = plt.subplots()
-                ax.plot(score_values, 'o-')
-                ax.set_title('Score Over Time')
-                ax.set_xlabel('Attempt')
-                ax.set_ylabel('Score')
-                ax.set_xticks(range(len(scores)))
-                ax.set_xticklabels(range(1, len(scores) + 1))
-                st.pyplot(fig)
+            fig, ax = plt.subplots()
+            ax.plot(score_percentages, 'o-', color='blue')  # Plot percentage instead of score values
+            ax.set_title('Score Over Time')
+            ax.set_xlabel('Attempt')
+            ax.set_ylabel('Percentage Score')
+            ax.set_xticks(range(len(scores)))
+            ax.set_xticklabels(range(1, len(scores) + 1))
+            ax.set_facecolor('#F0F2F6')  # Set background color to match Streamlit
+            fig.patch.set_facecolor('#F0F2F6')
 
-                for score, grade in scores:
-                    grade_color = {
-                        'A': '#4CAF50',  # Green
-                        'B': '#90EE90',  # Light Green
-                        'C': '#FFC107',  # Amber
-                        'D': '#FF9800',  # Orange
-                        'F': '#F44336',  # Red
-                    }.get(grade, '#9E9E9E')  # Grey for undefined grades
+            for i, (score, grade) in enumerate(scores):
+                grade_color = {
+                    'A': '#4CAF50',  # Green
+                    'B': '#90EE90',  # Light Green
+                    'C': '#FFC107',  # Amber
+                    'D': '#FF9800',  # Orange
+                    'F': '#F44336',  # Red
+                }.get(grade, '#9E9E9E')  # Grey for undefined grades
 
-                    st.markdown(
-                        f"<span style='color: {grade_color};'>{grade}</span> ({score})",
-                        unsafe_allow_html=True
-                    )
-                
+                ax.annotate(f"{grade} ({score})", (i, score_percentages[i]),
+                            textcoords="offset points", xytext=(0,10),
+                            ha='center', color=grade_color)
+            
+            st.pyplot(fig)
+            
 def display_current_question():
     question_tuple = st.session_state.questions[st.session_state.current_question_index]
     question, options, correct_answer_index, explanation = question_tuple
@@ -270,7 +272,6 @@ with st.sidebar:
             st.session_state.current_question_index = 0
             st.session_state.show_next = False
             st.session_state.answer_submitted = False
-            display_grade_history_with_graph(quiz)
             st.experimental_rerun()
         
         scores = quiz.get('scores', [])  
