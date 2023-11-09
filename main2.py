@@ -91,7 +91,7 @@ def main_screen():
     topic = st.text_input("Enter the topic you want to create a quiz about:")
 
     # columns
-    col1, col2 = st.columns([1, 4])  # column ratio
+    col1, col2 = st.columns([1, 0.1, 4])  # column ratio
 
     with col1:
         generate_quiz = st.button("Generate Quiz")
