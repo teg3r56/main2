@@ -124,7 +124,6 @@ def display_grade_history_with_graph(current_quiz):
         if scores:
             # Extract scores and convert to numeric values for graph
             score_values = [int(score.split()[0]) for score, _ in scores]
-            grades = [grade for _, grade in scores]
 
             # Plot the graph
             fig, ax = plt.subplots()
@@ -139,16 +138,15 @@ def display_grade_history_with_graph(current_quiz):
             # Display color-coded grades
             for score, grade in scores:
                 grade_color = {
-                    'A': 'lightgreen',
-                    'B': 'yellowgreen',
-                    'C': 'yellow',
-                    'D': 'orange',
-                    'F': 'red'
-                }.get(grade, 'lightgrey')
+                    'A': '#4CAF50',  # Green
+                    'B': '#FFEB3B',  # Yellow
+                    'C': '#FFC107',  # Amber
+                    'D': '#FF9800',  # Orange
+                    'F': '#F44336',  # Red
+                }.get(grade, '#9E9E9E')  
 
                 st.sidebar.markdown(
-                    f"<div style='border:2px solid;padding:10px;margin-bottom:10px;color:white;background-color:{grade_color};'>"
-                    f"Score: {score} - Grade: {grade}</div>",
+                    f"<span style='color: {grade_color};'>{grade}</span> ({score})",
                     unsafe_allow_html=True
                 )
                 
