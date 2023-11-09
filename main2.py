@@ -95,6 +95,9 @@ def main_screen():
                 if percent_complete > 95:
                     exponential_factor = (percent_complete - 95) / 5 
                     time_delay += 0.5 * (2 ** exponential_factor)
+                if percent_complete > 99:
+                    exponential_factor = (percent_complete - 99) / 5 
+                    time_delay += 2 * (2 ** exponential_factor)
                     
                 progress = percent_complete / 100.0
                 st.progress(progress)
