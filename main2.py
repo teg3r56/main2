@@ -122,9 +122,18 @@ def display_current_question():
     question, options, correct_answer_index, explanation = question_tuple
     st.write(question)
     option = st.radio("Choices", options, key=f"option{st.session_state.current_question_index}")
+    
     if not st.session_state.answer_submitted:
-        if st.button("Submit Answer"):
+        submit_button = st.button("Submit Answer")
+        if submit_button:
             check_answer(option, options, correct_answer_index, explanation)
+
+    if st.session_state.show_next:
+        if st.button("Next Question"):
+            st.session_state.current_question_index += 1
+            st.session_state.show_next = False
+            st.session_state.answer_submitted = False  
+            st.experimental_rerun()
 
 def check_answer(option, options, correct_answer_index, explanation):
     if options.index(option) == correct_answer_index:
@@ -132,6 +141,7 @@ def check_answer(option, options, correct_answer_index, explanation):
         st.success("Correct!")
     else:
         st.error(f"Incorrect! {explanation}")
+    
     st.session_state.show_next = True
     st.session_state.answer_submitted = True
 
