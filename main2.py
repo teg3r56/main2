@@ -119,7 +119,8 @@ def main_screen():
             handle_quiz_end()
             
 def display_grade_history_with_graph(current_quiz):
-    with st.container():
+    grade_history_container = st.expander("Grade History and Graph", expanded=True)
+    with grade_history_container:
         if current_quiz:
             scores = current_quiz.get('scores', [])
             if scores:
@@ -269,6 +270,7 @@ with st.sidebar:
             st.session_state.current_question_index = 0
             st.session_state.show_next = False
             st.session_state.answer_submitted = False
+            display_grade_history_with_graph(quiz)
             st.experimental_rerun()
         
         scores = quiz.get('scores', [])  
