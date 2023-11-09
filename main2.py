@@ -210,26 +210,28 @@ def handle_quiz_end():
         total_questions = len(st.session_state.questions)
         score = f"{correct_answers} out of {total_questions}"
         letter_grade = get_letter_grade(correct_answers, total_questions)
-        st.write(f"Quiz Finished! You got {score} correct. Your grade: {letter_grade}.")
         
         capitalized_topic = capitalize_topic(st.session_state.topic)
         existing_entry = next((entry for entry in st.session_state.quiz_history if entry['topic'] == capitalized_topic), None)
-    
-        if current_quiz:
-            display_grade_history_with_graph(current_quiz)
-        
+
         if existing_entry:
+            display_grade_history_with_graph(existing_entry)  
+
             if 'scores' not in existing_entry:
                 existing_entry['scores'] = []
             existing_entry['scores'].append((score, letter_grade))
         else:
-            st.session_state.quiz_history.append({
+            new_entry = {
                 'topic': capitalized_topic,
                 'scores': [(score, letter_grade)],
                 'questions': st.session_state.questions
-            })
-        
+            }
+            st.session_state.quiz_history.append(new_entry)
+            display_grade_history_with_graph(new_entry)  
+
+        st.write(f"Quiz Finished! You got {score} correct. Your grade: {letter_grade}.")
         st.session_state.show_next = True
+
     if end_placeholder.button("Restart Quiz"):
         restart_quiz()
         end_placeholder.empty()
