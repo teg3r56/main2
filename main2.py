@@ -138,7 +138,7 @@ def main_screen():
         with st.empty():
             for percent_complete in range(101):
                 # loading bar logic
-                time_delay = calculate_delay(percent_complete)
+                time_delay = calculate_delay(percent_complete, st.session_state.number_of_questions)
                 progress = percent_complete / 100.0
                 st.progress(progress)
                 console.text(f"Loading... {percent_complete}%")
@@ -250,20 +250,25 @@ def handle_quiz_end():
         st.experimental_rerun()
 
         
-def calculate_delay(percent_complete):
-    time_delay = 0.09  
+def calculate_delay(percent_complete, number_of_questions):
+    
+    base_time = max(0.05, 1 / (number_of_questions + 1))
+    
+    time_delay = base_time
     if percent_complete > 50:
-        time_delay = 0.15 + (percent_complete - 50) * 0.02
+        time_delay += (0.15 + (percent_complete - 50) * 0.02) * (1 + 0.1 * (number_of_questions - 1))
     if percent_complete > 85:
         exponential_factor = (percent_complete - 85) / 15
-        time_delay += (2 ** exponential_factor) / 100
+        time_delay += ((2 ** exponential_factor) / 100) * (1 + 0.1 * (number_of_questions - 1))
     if percent_complete > 95:
         exponential_factor = (percent_complete - 95) / 5
-        time_delay += 0.5 * (2 ** exponential_factor)
+        time_delay += (0.5 * (2 ** exponential_factor)) * (1 + 0.1 * (number_of_questions - 1))
     if percent_complete > 99:
         exponential_factor = (percent_complete - 99) / 1
-        time_delay += 2 * (2 ** exponential_factor)
+        time_delay += (2 * (2 ** exponential_factor)) * (1 + 0.1 * (number_of_questions - 1))
+    
     return time_delay
+
 
 with st.sidebar:
     st.header("Quiz History")
