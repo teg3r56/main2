@@ -81,7 +81,7 @@ def main_screen():
     st.title("Teague Coughlin Quiz Generator")
     topic = st.text_input("Enter the topic you want to create a quiz about:")
     generate_quiz = st.button("Generate Quiz")
-    console = st.empty()  # Placeholder for console messages
+    console = st.empty()
 
     if generate_quiz and topic:
         with st.empty():  # Placeholder for loading bar
@@ -110,13 +110,14 @@ def main_screen():
         else:
             console.text("Failed to generate quiz. Please try again.")
 
-    if 'questions' in st.session_state and st.session_state.questions:
+   if 'questions' in st.session_state and st.session_state.questions:
         if st.session_state.current_question_index < len(st.session_state.questions):
             question_tuple = st.session_state.questions[st.session_state.current_question_index]
             question, options, correct_answer_index, explanation = question_tuple
             st.write(question)
             option = st.radio("Choices", options, key=f"option{st.session_state.current_question_index}")
 
+            # The 'Submit Answer' button should be shown if an answer hasn't been submitted yet.
             if not st.session_state.answer_submitted:
                 submit_answer = st.button("Submit Answer")
                 if submit_answer:
@@ -125,16 +126,28 @@ def main_screen():
                         st.success("Correct!")
                     else:
                         st.error(f"Incorrect! {explanation}")
+                    # Prepare to show the 'Next Question' button.
                     st.session_state.show_next = True
-                    st.session_state.answer_submitted = True  # Indicates that the answer was submitted
+                    st.session_state.answer_submitted = True
 
+            # The 'Next Question' button should only appear after an answer is submitted.
             if st.session_state.show_next and st.session_state.answer_submitted:
-                # The 'Next Question' button should be shown only after an answer is submitted.
                 if st.button("Next Question"):
                     st.session_state.current_question_index += 1
                     st.session_state.show_next = False
                     st.session_state.answer_submitted = False  # Reset for the next question
                     st.experimental_rerun()
-                    
+        else:
+            # Handle the end of the quiz
+            st.balloons()
+            st.write(f"Quiz Finished! You got {st.session_state.correct_answers} out of {len(st.session_state.questions)} correct.")
+            if st.button("Restart Quiz"):
+                st.session_state.questions = []
+                st.session_state.correct_answers = 0
+                st.session_state.current_question_index = 0
+                st.session_state.show_next = False
+                random.shuffle(st.session_state.questions)  # Reshuffle questions
+                st.experimental_rerun()
+
 if __name__ == "__main__":
     main_screen()
