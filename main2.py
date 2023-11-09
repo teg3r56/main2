@@ -124,9 +124,9 @@ def display_current_question():
     option = st.radio("Choices", options, key=f"option{st.session_state.current_question_index}")
     if not st.session_state.answer_submitted:
         if st.button("Submit Answer"):
-            check_answer(option, correct_answer_index, explanation)
+            check_answer(option, options, correct_answer_index, explanation)
 
-def check_answer(option, correct_answer_index, explanation):
+def check_answer(option, options, correct_answer_index, explanation):
     if options.index(option) == correct_answer_index:
         st.session_state.correct_answers += 1
         st.success("Correct!")
