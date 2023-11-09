@@ -101,6 +101,21 @@ def main_screen():
             """,
             unsafe_allow_html=True,
     )
+
+    st.markdown(
+        """
+        <style>
+        /* Target the caption and adjust its position */
+        .stMarkdown {
+            position: relative;
+            top: -25px; /* Adjust this value as needed */
+            left: 20px; /* Adjust this value as needed */
+            font-size: 0.8em; /* Optional: Adjust the font size */
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
     
     # columns
     col1, col2, col3 = st.columns([2, 3, 3])
@@ -113,7 +128,7 @@ def main_screen():
 
     with col3:
         st.caption("Adjust the number of questions for the quiz")
-        
+    
     console = st.empty()
 
     if generate_quiz and topic:
