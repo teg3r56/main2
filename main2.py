@@ -88,18 +88,16 @@ def main_screen():
 
     st.title("Teague Coughlin Quiz Generator")
     
-    # columns align
-    col1, col2, col3 = st.columns([5, 2, 3])  
+    topic = st.text_input("Enter the topic you want to create a quiz about:")
+
+    # columns
+    col1, col2 = st.columns([1, 4])  # column ratio 
 
     with col1:
-        topic = st.text_input("Enter the topic you want to create a quiz about:")
-    
-    with col2:
-        # slider
-        number_of_questions = st.slider("", 1, 20, 5, key='num_questions')  
-
-    with col3:
         generate_quiz = st.button("Generate Quiz")
+        
+    with col2:
+        number_of_questions = st.slider("", 1, 20, 5, key='num_questions')
 
     console = st.empty()
 
