@@ -119,36 +119,35 @@ def main_screen():
             handle_quiz_end()
             
 def display_grade_history_with_graph(current_quiz):
-    if current_quiz:
-        scores = current_quiz.get('scores', [])
-        if scores:
-            # Extract scores and convert to numeric values for graph
-            score_values = [int(score.split()[0]) for score, _ in scores]
+    with st.container():
+        if current_quiz:
+            scores = current_quiz.get('scores', [])
+            if scores:
+                score_values = [int(score.split()[0]) for score, _ in scores]
+                grades = [grade for _, grade in scores]
 
-            # Plot the graph
-            fig, ax = plt.subplots()
-            ax.plot(score_values, 'o-')
-            ax.set_title('Score Over Time')
-            ax.set_xlabel('Attempt')
-            ax.set_ylabel('Score')
-            ax.set_xticks(range(len(scores)))
-            ax.set_xticklabels(range(1, len(scores) + 1))
-            st.sidebar.pyplot(fig)
+                fig, ax = plt.subplots()
+                ax.plot(score_values, 'o-')
+                ax.set_title('Score Over Time')
+                ax.set_xlabel('Attempt')
+                ax.set_ylabel('Score')
+                ax.set_xticks(range(len(scores)))
+                ax.set_xticklabels(range(1, len(scores) + 1))
+                st.pyplot(fig)
 
-            # Display color-coded grades
-            for score, grade in scores:
-                grade_color = {
-                    'A': '#4CAF50',  # Green
-                    'B': '#FFEB3B',  # Yellow
-                    'C': '#FFC107',  # Amber
-                    'D': '#FF9800',  # Orange
-                    'F': '#F44336',  # Red
-                }.get(grade, '#9E9E9E')  
+                for score, grade in scores:
+                    grade_color = {
+                        'A': '#4CAF50',  # Green
+                        'B': '#90EE90',  # Light Green
+                        'C': '#FFC107',  # Amber
+                        'D': '#FF9800',  # Orange
+                        'F': '#F44336',  # Red
+                    }.get(grade, '#9E9E9E')  # Grey for undefined grades
 
-                st.sidebar.markdown(
-                    f"<span style='color: {grade_color};'>{grade}</span> ({score})",
-                    unsafe_allow_html=True
-                )
+                    st.markdown(
+                        f"<span style='color: {grade_color};'>{grade}</span> ({score})",
+                        unsafe_allow_html=True
+                    )
                 
 def display_current_question():
     question_tuple = st.session_state.questions[st.session_state.current_question_index]
