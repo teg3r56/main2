@@ -220,15 +220,19 @@ def handle_quiz_end():
 
     unique_key = f"restart_{int(time.time())}"
     if end_placeholder.button("Restart Quiz"):
-        # Reset quiz state
+        # debug 
+        st.write("Restart button clicked. Resetting quiz state...")
+
         st.session_state.questions = []
         st.session_state.correct_answers = 0
         st.session_state.current_question_index = 0
         st.session_state.show_next = False
         st.session_state.answer_submitted = False
-        # Clear any input or selections
         st.session_state.topic = ""
-        # Rerun the app
+
+        # debug 
+        st.write("Session state after reset:", st.session_state)
+        
         st.experimental_rerun()
 
 def calculate_delay(percent_complete):
