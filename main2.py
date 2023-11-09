@@ -252,7 +252,7 @@ def handle_quiz_end():
         
 def calculate_delay(percent_complete, number_of_questions):
     
-    base_time = max(0.02, 2 / (number_of_questions + 1))
+    base_time = max(0.02, 2 / (number_of_questions + 4))
     
     time_delay = base_time
     if percent_complete > 50:
