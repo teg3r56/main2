@@ -187,56 +187,30 @@ def handle_quiz_end():
         score = f"{correct_answers} out of {total_questions}"
         letter_grade = get_letter_grade(correct_answers, total_questions)
 
-        # Display the score and colored grade in one line
         st.markdown(f"Quiz Finished! You got {score} correct. Your grade: <span style='color: {grade_color[letter_grade]};'>{letter_grade}</span>", unsafe_allow_html=True)
-        
-        # Check if there is a previous score to display
-        if len(st.session_state.quiz_history) > 0:
-            last_quiz = st.session_state.quiz_history[-1]
-            last_scores = last_quiz.get('scores', [])
-            if last_scores:
-                last_score, last_grade = last_scores[-1]
-                # Color for the previous grade
-                last_grade_color = grade_color[last_grade]
-                # Display the last score with colored grade letter
-                st.markdown(f"Your previous attempt: <span style='color: {last_grade_color};'>{last_grade}</span> ({last_score})", unsafe_allow_html=True)
-        
-        # Save the current quiz results
-        if 'topic' in st.session_state:
-            # Capitalize topic before saving
-            capitalized_topic = capitalize_topic(st.session_state.topic)
-            # Check if the topic is already in the history
-            existing_quiz = next((quiz for quiz in st.session_state.quiz_history if quiz['topic'] == capitalized_topic), None)
-            if existing_quiz:
-                # Append the new score
-                existing_quiz['scores'].append((score, letter_grade))
-            else:
-                # Add a new entry for the topic in the history
-                st.session_state.quiz_history.append({
-                    'topic': capitalized_topic,
-                    'scores': [(score, letter_grade)],
-                    'questions': st.session_state.questions
-                })
+
+        # save quiz results
+        capitalized_topic = capitalize_topic(st.session_state.topic)
+        existing_quiz = next((quiz for quiz in st.session_state.quiz_history if quiz['topic'] == capitalized_topic), None)
+        if existing_quiz:
+            existing_quiz['scores'].append((score, letter_grade))
+        else:
+            st.session_state.quiz_history.append({
+                'topic': capitalized_topic,
+                'scores': [(score, letter_grade)],
+                'questions': st.session_state.questions
+            })
 
         st.session_state.show_next = True
 
-    unique_key = f"restart_{int(time.time())}"
     if end_placeholder.button("Restart Quiz"):
-        # debug 
-        st.write("Restart button clicked. Resetting quiz state...")
-
-        st.session_state.questions = []
-        st.session_state.correct_answers = 0
+        random.shuffle(st.session_state.questions)
         st.session_state.current_question_index = 0
+        st.session_state.correct_answers = 0
         st.session_state.show_next = False
         st.session_state.answer_submitted = False
-        st.session_state.topic = ""
-
-        # debug 
-        st.write("Session state after reset:", st.session_state)
-        
         st.experimental_rerun()
-
+        
 def calculate_delay(percent_complete):
     time_delay = 0.09  
     if percent_complete > 50:
