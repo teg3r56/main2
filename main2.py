@@ -72,7 +72,10 @@ if 'questions' not in st.session_state:
     st.session_state.correct_answers = 0
     st.session_state.current_question_index = 0
     st.session_state.show_next = False
-
+    
+if 'quiz_history' not in st.session_state:
+    st.session_state.quiz_history = []
+    
 def main_screen():
     if 'quiz_history' not in st.session_state:
         st.session_state.quiz_history = []
