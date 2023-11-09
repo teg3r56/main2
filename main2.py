@@ -31,11 +31,11 @@ def generate_questions_from_topic(topic, number_of_questions):
                 messages=[
                     {
                         "role": "system",
-                        "content": f"Generate a {number_of_questions} list of multiple-choice questions with answers and explanations. The output should be in the form of a Python list, with each question represented as a tuple. Each tuple should contain the question text, a list of options, the index of the correct option, and an explanation. There should only be one pair of brackets surrounding the entire list, and no additional brackets around individual tuples."
+                        "content": f"Generate an exactly {number_of_questions} question long list of multiple-choice questions with answers and explanations. The output should be in the form of a Python list, with each question represented as a tuple. Each tuple should contain the question text, a list of options, the index of the correct option, and an explanation. There should only be one pair of brackets surrounding the entire list, and no additional brackets around individual tuples."
                     },
                     {
                         "role": "user", 
-                        "content": f"Create {number_of_questions} multiple-choice questions about {topic}. "
+                        "content": f"Create multiple-choice questions about {topic} consisting of exactly {number_of_questions} questions. "
                                                         "In this exact format, only one pair of brackets surrounding all questions: "
                                                         "[('question', ['options', 'options', 'options'], correct_option_index, 'explanation')] "
                                                         "Example: ["
