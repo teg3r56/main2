@@ -179,9 +179,11 @@ def handle_quiz_end():
         
         capitalized_topic = capitalize_topic(st.session_state.topic)
         
-        # Update the history with the new score
         existing_entry = next((entry for entry in st.session_state.quiz_history if entry['topic'] == capitalized_topic), None)
+        
         if existing_entry:
+            if 'scores' not in existing_entry:
+                existing_entry['scores'] = []
             existing_entry['scores'].append((score, letter_grade))
         else:
             st.session_state.quiz_history.append({
