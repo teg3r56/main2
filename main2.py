@@ -110,6 +110,7 @@ def main_screen():
         
     with col2:
         number_of_questions = st.slider("", 1, 20, 5, key='num_questions')
+        st.caption("Adjust the number of questions for the quiz")
 
     console = st.empty()
 
@@ -139,25 +140,25 @@ def main_screen():
             display_current_question()
         else:
             handle_quiz_end()
-    else:
-        st.write("Welcome! Enter a topic to generate a quiz.")
             
 def display_current_question():
     question_tuple = st.session_state.questions[st.session_state.current_question_index]
     question, options, correct_answer_index, explanation = question_tuple
     st.write(question)
-    option = st.radio("Choices", options, key=f"option{st.session_state.current_question_index}")
+    
+    disabled = st.session_state.answer_submitted
+    
+    option = st.radio("Choose the correct answer:", options, key=f"option{st.session_state.current_question_index}", disabled=disabled)
 
-    # Use placeholders for buttons to manage their state
+    # manage button state
     submit_placeholder = st.empty()
     next_placeholder = st.empty()
 
     if not st.session_state.answer_submitted:
         if submit_placeholder.button("Submit Answer"):
             check_answer(option, options, correct_answer_index, explanation)
-            submit_placeholder.empty()  # Clear the submit button after it's clicked
+            submit_placeholder.empty()  
 
-    # Check if we need to show the 'Next Question' button
     if st.session_state.show_next:
         if next_placeholder.button("Next Question"):
             next_question()
