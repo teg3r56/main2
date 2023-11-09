@@ -24,7 +24,7 @@ def parse_questions(content):
         return None
 
 def generate_questions_from_topic(topic):
-    with st.spinner('Formating your quiz...'):
+    with st.spinner('Formatting your quiz...'):
         try:
             response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
@@ -176,17 +176,29 @@ def handle_quiz_end():
         score = f"{correct_answers} out of {total_questions}"
         letter_grade = get_letter_grade(correct_answers, total_questions)
 
-        # grade color
+        # Color of the grade
         grade_color = {
             'A': '#4CAF50',  # Green
             'B': '#90EE90',  # Light Green
             'C': '#FFC107',  # Amber
             'D': '#FF9800',  # Orange
             'F': '#F44336',  # Red
-        }.get(letter_grade, '#9E9E9E')  # undefined grades
+        }.get(letter_grade, '#9E9E9E')  # Grey for undefined grades
 
-        st.write(f"Quiz Finished! You got {score} correct. Your grade: ", unsafe_allow_html=True)
-        st.markdown(f"<span style='color: {grade_color};'>{letter_grade}</span>", unsafe_allow_html=True)
+        # Display the score and colored grade in one line
+        st.markdown(f"Quiz Finished! You got {score} correct. Your grade: <span style='color: {grade_color};'>{letter_grade}</span>", unsafe_allow_html=True)
+        
+        # Check if there is a previous score to display
+        if len(st.session_state.quiz_history) > 0:
+            last_quiz = st.session_state.quiz_history[-1]
+            last_scores = last_quiz.get('scores', [])
+            if last_scores:
+                last_score, last_grade = last_scores[-1]
+                # Color for the previous grade
+                last_grade_color = grade_color.get(last_grade, '#9E9E9E')
+                # Display the last score with colored grade letter
+                st.markdown(f"Previous attempt: <span style='color: {last_grade_color};'>{last_grade}</span> ({last_score})", unsafe_allow_html=True)
+        
         st.session_state.show_next = True
 
     if end_placeholder.button("Restart Quiz"):
