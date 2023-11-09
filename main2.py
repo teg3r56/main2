@@ -96,7 +96,7 @@ def main_screen():
                 /* Target the slider's container div and adjust its position */
                 .stSlider > div {
                     margin-top: -30px;  /* Adjust this value as needed */
-                    margin-left: -10px;  /* Adjust this value as needed */
+                    margin-left: -13px;  /* Adjust this value as needed */
                 }
             </style>
             """,
