@@ -1,4 +1,4 @@
-import streamlit as st
+ import streamlit as st
 import openai
 import ast
 import random
@@ -72,7 +72,7 @@ if 'questions' not in st.session_state:
     st.session_state.correct_answers = 0
     st.session_state.current_question_index = 0
     st.session_state.show_next = False
-    
+
 if 'quiz_history' not in st.session_state:
     st.session_state.quiz_history = []
     
@@ -116,6 +116,8 @@ def main_screen():
             display_current_question()
         else:
             handle_quiz_end()
+    else:
+        st.write("Welcome! Enter a topic to generate a quiz.")
             
 def display_current_question():
     question_tuple = st.session_state.questions[st.session_state.current_question_index]
