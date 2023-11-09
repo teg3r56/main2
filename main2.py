@@ -86,15 +86,15 @@ def main_screen():
     if generate_quiz and topic:
         with st.empty():  # Placeholder for loading bar
             for percent_complete in range(101):
-                time_delay = 0.07  # Base delay
+                time_delay = 0.09  # Base delay
                 if percent_complete > 50:
                     time_delay = 0.15 + (percent_complete - 50) * 0.02
                 if percent_complete > 85:
                     exponential_factor = (percent_complete - 85) / 15
                     time_delay += (2 ** exponential_factor) / 100  # adjust the denominator for rate control
                 if percent_complete > 95:
-                    exponential_factor = (percent_complete - 94) / 15
-                    time_delay += (2 ** exponential_factor) / 125
+                    exponential_factor = (percent_complete - 95) / 5 
+                    time_delay += 0.5 * (2 ** exponential_factor)
                     
                 progress = percent_complete / 100.0
                 st.progress(progress)
@@ -127,24 +127,38 @@ def main_screen():
                         st.error(f"Incorrect! {explanation}")
                     st.session_state.show_next = True
                     st.session_state.answer_submitted = True
+                else:
+                    st.session_state.show_next = False
 
             if st.session_state.show_next and st.session_state.answer_submitted:
-                if st.button("Next Question"):
+                next_question_button = st.empty()  # Create a placeholder for the 'Next Question' button
+                if next_question_button.button("Next Question"):
                     st.session_state.current_question_index += 1
                     st.session_state.show_next = False
-                    st.session_state.answer_submitted = False  # Reset for the next question
+                    st.session_state.answer_submitted = False
+                    next_question_button.empty()  # Remove the 'Next Question' button after it's clicked
                     st.experimental_rerun()
+            # Make sure to clear the 'Next Question' button if it's the last question
+            if st.session_state.current_question_index >= len(st.session_state.questions):
+                st.session_state.show_next = False
+
         else:
             # Handle the end of the quiz
-            st.balloons()
-            st.write(f"Quiz Finished! You got {st.session_state.correct_answers} out of {len(st.session_state.questions)} correct.")
+            if not st.session_state.show_next:
+                st.balloons()
+                st.write(f"Quiz Finished! You got {st.session_state.correct_answers} out of {len(st.session_state.questions)} correct.")
+                st.session_state.show_next = True  # Prevent multiple balloon triggers
             if st.button("Restart Quiz"):
-                st.session_state.questions = []
+                # Ensure that the questions are reshuffled before assigning them back to the session state
+                new_questions = st.session_state.questions.copy()
+                random.shuffle(new_questions)
+                st.session_state.questions = new_questions
                 st.session_state.correct_answers = 0
                 st.session_state.current_question_index = 0
                 st.session_state.show_next = False
-                random.shuffle(st.session_state.questions)  # Reshuffle questions
+                st.session_state.answer_submitted = False
                 st.experimental_rerun()
 
 if __name__ == "__main__":
     main_screen()
+
