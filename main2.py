@@ -114,13 +114,8 @@ def main_screen():
             question, options, correct_answer_index, explanation = question_tuple
             st.write(question)
             option = st.radio("Choices", options, key=f"option{st.session_state.current_question_index}")
-            if st.session_state.show_next:
-                # The 'Next Question' button should be shown only after an answer is submitted.
-                if st.button("Next Question"):
-                    st.session_state.current_question_index += 1
-                    st.session_state.show_next = False  # Prepare to show the new question and hide the 'Next Question' button
-                    st.experimental_rerun()
-            else:
+
+            if not st.session_state.answer_submitted:
                 submit_answer = st.button("Submit Answer")
                 if submit_answer:
                     if options.index(option) == correct_answer_index:
@@ -128,18 +123,16 @@ def main_screen():
                         st.success("Correct!")
                     else:
                         st.error(f"Incorrect! {explanation}")
-                    st.session_state.show_next = True  # Signal that the next question should be shown on the next rerun
-        else:
-            # Handle the end of the quiz
-            st.balloons()
-            st.write(f"Quiz Finished! You got {st.session_state.correct_answers} out of {len(st.session_state.questions)} correct.")
-            if st.button("Restart Quiz"):
-                st.session_state.questions = []
-                st.session_state.correct_answers = 0
-                st.session_state.current_question_index = 0
-                st.session_state.show_next = False
-                random.shuffle(st.session_state.questions)  # Reshuffle questions
-                st.experimental_rerun()
+                    st.session_state.show_next = True
+                    st.session_state.answer_submitted = True  # Indicates that the answer was submitted
 
+            if st.session_state.show_next and st.session_state.answer_submitted:
+                # The 'Next Question' button should be shown only after an answer is submitted.
+                if st.button("Next Question"):
+                    st.session_state.current_question_index += 1
+                    st.session_state.show_next = False
+                    st.session_state.answer_submitted = False  # Reset for the next question
+                    st.experimental_rerun()
+                    
 if __name__ == "__main__":
     main_screen()
