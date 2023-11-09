@@ -223,11 +223,11 @@ def handle_quiz_end():
                 existing_entry['scores'] = []
             existing_entry['scores'].append((score, letter_grade))
         else:
-        st.session_state.quiz_history.append({
-            'topic': capitalized_topic,
-            'scores': [(score, letter_grade)],
-            'questions': st.session_state.questions
-        })
+            st.session_state.quiz_history.append({
+                'topic': capitalized_topic,
+                'scores': [(score, letter_grade)],
+                'questions': st.session_state.questions
+            })
         
         st.session_state.show_next = True
     if end_placeholder.button("Restart Quiz"):
