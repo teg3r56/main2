@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import streamlit as st
 import openai
 import ast
@@ -118,39 +117,47 @@ def main_screen():
         else:
             handle_quiz_end()
             
-def display_grade_history_with_graph(current_quiz):
-    if current_quiz:
-        scores = current_quiz.get('scores', [])
-        if scores:
-            # Calculate percentage scores
-            score_percentages = [
-                (int(score.split()[0]) / len(current_quiz['questions'])) * 100 for score, _ in scores
-            ]
+def handle_quiz_end():
+    end_placeholder = st.empty()
+    if not st.session_state.show_next:
+        st.balloons()
+        correct_answers = st.session_state.correct_answers
+        total_questions = len(st.session_state.questions)
+        score = f"{correct_answers} out of {total_questions}"
+        letter_grade = get_letter_grade(correct_answers, total_questions)
+        
+        capitalized_topic = capitalize_topic(st.session_state.topic)
+        existing_entry = next((entry for entry in st.session_state.quiz_history if entry['topic'] == capitalized_topic), None)
 
-            fig, ax = plt.subplots()
-            ax.plot(score_percentages, 'o-', color='blue')  # Plot percentage instead of score values
-            ax.set_title('Score Over Time')
-            ax.set_xlabel('Attempt')
-            ax.set_ylabel('Percentage Score')
-            ax.set_xticks(range(len(scores)))
-            ax.set_xticklabels(range(1, len(scores) + 1))
-            ax.set_facecolor('#F0F2F6')  # Set background color to match Streamlit
-            fig.patch.set_facecolor('#F0F2F6')
+        if existing_entry:
+            if 'scores' not in existing_entry:
+                existing_entry['scores'] = []
+            existing_entry['scores'].append((score, letter_grade))
+        else:
+            new_entry = {
+                'topic': capitalized_topic,
+                'scores': [(score, letter_grade)],
+                'questions': st.session_state.questions
+            }
+            st.session_state.quiz_history.append(new_entry)
 
-            for i, (score, grade) in enumerate(scores):
-                grade_color = {
-                    'A': '#4CAF50',  # Green
-                    'B': '#90EE90',  # Light Green
-                    'C': '#FFC107',  # Amber
-                    'D': '#FF9800',  # Orange
-                    'F': '#F44336',  # Red
-                }.get(grade, '#9E9E9E')  # Grey for undefined grades
+        grade_color = {
+            'A': '#4CAF50',  # Green
+            'B': '#90EE90',  # Light Green
+            'C': '#FFC107',  # Amber
+            'D': '#FF9800',  # Orange
+            'F': '#F44336',  # Red
+        }.get(letter_grade, '#9E9E9E')  # Grey for undefined grades
 
-                ax.annotate(f"{grade} ({score})", (i, score_percentages[i]),
-                            textcoords="offset points", xytext=(0,10),
-                            ha='center', color=grade_color)
-            
-            st.pyplot(fig)
+        st.write(f"Quiz Finished! You got {score} correct. Your grade: ", 
+                 unsafe_allow_html=True)
+        st.markdown(f"<span style='color: {grade_color};'>{letter_grade}</span>", 
+                    unsafe_allow_html=True)
+        st.session_state.show_next = True
+
+    if end_placeholder.button("Restart Quiz"):
+        restart_quiz()
+        end_placeholder.empty()
             
 def display_current_question():
     question_tuple = st.session_state.questions[st.session_state.current_question_index]
