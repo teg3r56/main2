@@ -86,11 +86,14 @@ def main_screen():
             for percent_complete in range(101):
                 time_delay = 0.07  # Base delay
                 if percent_complete > 50:
-                    time_delay = 0.1 + (percent_complete - 50) * 0.02
+                    time_delay = 0.15 + (percent_complete - 50) * 0.02
                 if percent_complete > 85:
                     exponential_factor = (percent_complete - 85) / 15
-                    time_delay += (2 ** exponential_factor) / 100  # Adjust the denominator for rate control
-                
+                    time_delay += (2 ** exponential_factor) / 100  # adjust the denominator for rate control
+                if percent_complete > 95:
+                    exponential_factor = (percent_complete - 95) / 15
+                    time_delay += (2 ** exponential_factor) / 125
+                    
                 progress = percent_complete / 100.0
                 st.progress(progress)
                 console.text(f"Loading... {percent_complete}%")
