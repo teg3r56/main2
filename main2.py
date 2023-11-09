@@ -218,16 +218,10 @@ def handle_quiz_end():
 
         st.session_state.show_next = True
 
-    if end_placeholder.button("Restart Quiz"):
+    unique_key = f"restart_{int(time.time())}"
+    if end_placeholder.button("Restart Quiz", key=unique_key):
         restart_quiz()
         end_placeholder.empty()
-
-        st.session_state.show_next = True
-
-    if end_placeholder.button("Restart Quiz"):
-        restart_quiz()
-        end_placeholder.empty()
-
 
 # restart quiz
 def restart_quiz():
