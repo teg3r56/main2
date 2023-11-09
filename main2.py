@@ -252,21 +252,21 @@ def handle_quiz_end():
         
 def calculate_delay(percent_complete, number_of_questions):
     
-    base_time = max(0.02, 2 / (number_of_questions + 4))
-    
-    time_delay = base_time
+    base_time = 0.01  # base time for 1 question
+    incremental_time = 0.01  # additional time per question
+
+    time_delay = base_time + ((number_of_questions - 1) * incremental_time)
+
+    # Keep the exponential growth sections
     if percent_complete > 50:
-        time_delay += (0.15 + (percent_complete - 50) * 0.02) * (1 + 0.1 * (number_of_questions - 1))
+        time_delay *= (1 + (percent_complete - 50) / 50)
     if percent_complete > 85:
-        exponential_factor = (percent_complete - 85) / 15
-        time_delay += ((2 ** exponential_factor) / 100) * (1 + 0.1 * (number_of_questions - 1))
+        time_delay *= (1 + (percent_complete - 85) / 15)
     if percent_complete > 95:
-        exponential_factor = (percent_complete - 95) / 5
-        time_delay += (0.5 * (2 ** exponential_factor)) * (1 + 0.1 * (number_of_questions - 1))
+        time_delay *= (1 + (percent_complete - 95) / 5)
     if percent_complete > 99:
-        exponential_factor = (percent_complete - 99) / 1
-        time_delay += (2 * (2 ** exponential_factor)) * (1 + 0.1 * (number_of_questions - 1))
-    
+        time_delay *= (1 + (percent_complete - 99))
+
     return time_delay
 
 
