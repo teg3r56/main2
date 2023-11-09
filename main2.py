@@ -124,7 +124,7 @@ def main_screen():
         generate_quiz = st.button("Generate Quiz")
         
     with col2:
-        number_of_questions = st.slider("", 1, 20, 5, key='num_questions')
+        number_of_questions = st.slider("", 1, 40, 5, key='num_questions')
 
     with col3:
         st.caption("Adjust the number of questions for the quiz")
