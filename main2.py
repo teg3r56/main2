@@ -199,9 +199,9 @@ def calculate_delay(percent_complete):
 
 with st.sidebar:
     st.header("Quiz History")
-    for quiz in st.session_state.quiz_history:
+    for index, quiz in enumerate(st.session_state.quiz_history):
         topic_display = quiz['topic']
-        if st.button(f"Replay {topic_display} Quiz"):
+        if st.button(f"Replay {topic_display} Quiz", key=f"replay_{index}"):
             st.session_state.questions = quiz['questions']
             st.session_state.correct_answers = 0
             st.session_state.current_question_index = 0
