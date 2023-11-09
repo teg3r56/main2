@@ -74,31 +74,26 @@ if 'questions' not in st.session_state:
     st.session_state.show_next = False
 
 def main_screen():
+    if 'quiz_history' not in st.session_state:
+        st.session_state.quiz_history = []
+        
     if 'show_next' not in st.session_state:
         st.session_state.show_next = False
+        
     if 'answer_submitted' not in st.session_state:
         st.session_state.answer_submitted = False
+
     st.title("Teague Coughlin Quiz Generator")
     topic = st.text_input("Enter the topic you want to create a quiz about:")
     generate_quiz = st.button("Generate Quiz")
     console = st.empty()
 
     if generate_quiz and topic:
-        with st.empty():  # Placeholder for loading bar
+        st.session_state.topic = topic  
+        with st.empty():
             for percent_complete in range(101):
-                time_delay = 0.09  # Base delay
-                if percent_complete > 50:
-                    time_delay = 0.15 + (percent_complete - 50) * 0.02
-                if percent_complete > 85:
-                    exponential_factor = (percent_complete - 85) / 15
-                    time_delay += (2 ** exponential_factor) / 100  # adjust the denominator for rate control
-                if percent_complete > 95:
-                    exponential_factor = (percent_complete - 95) / 5 
-                    time_delay += 0.5 * (2 ** exponential_factor)
-                if percent_complete > 99:
-                    exponential_factor = (percent_complete - 99) / 5 
-                    time_delay += 2 * (2 ** exponential_factor)
-                    
+                # loading bar logic
+                time_delay = calculate_delay(percent_complete)
                 progress = percent_complete / 100.0
                 st.progress(progress)
                 console.text(f"Loading... {percent_complete}%")
@@ -115,52 +110,79 @@ def main_screen():
 
     if 'questions' in st.session_state and st.session_state.questions:
         if st.session_state.current_question_index < len(st.session_state.questions):
-            question_tuple = st.session_state.questions[st.session_state.current_question_index]
-            question, options, correct_answer_index, explanation = question_tuple
-            st.write(question)
-            option = st.radio("Choices", options, key=f"option{st.session_state.current_question_index}")
-
-            if not st.session_state.answer_submitted:
-                submit_answer = st.button("Submit Answer")
-                if submit_answer:
-                    if options.index(option) == correct_answer_index:
-                        st.session_state.correct_answers += 1
-                        st.success("Correct!")
-                    else:
-                        st.error(f"Incorrect! {explanation}")
-                    st.session_state.show_next = True
-                    st.session_state.answer_submitted = True
-                else:
-                    st.session_state.show_next = False
-
-            if st.session_state.show_next and st.session_state.answer_submitted:
-                next_question_button = st.empty()  # Create a placeholder for the 'Next Question' button
-                if next_question_button.button("Next Question"):
-                    st.session_state.current_question_index += 1
-                    st.session_state.show_next = False
-                    st.session_state.answer_submitted = False
-                    next_question_button.empty()  # Remove the 'Next Question' button after it's clicked
-                    st.experimental_rerun()
-            # Make sure to clear the 'Next Question' button if it's the last question
-            if st.session_state.current_question_index >= len(st.session_state.questions):
-                st.session_state.show_next = False
-
+            display_current_question()
         else:
-            # Handle the end of the quiz
-            if not st.session_state.show_next:
-                st.balloons()
-                st.write(f"Quiz Finished! You got {st.session_state.correct_answers} out of {len(st.session_state.questions)} correct.")
-                st.session_state.show_next = True  # Prevent multiple balloon triggers
-            if st.button("Restart Quiz"):
-                # Ensure that the questions are reshuffled before assigning them back to the session state
-                new_questions = st.session_state.questions.copy()
-                random.shuffle(new_questions)
-                st.session_state.questions = new_questions
-                st.session_state.correct_answers = 0
-                st.session_state.current_question_index = 0
-                st.session_state.show_next = False
-                st.session_state.answer_submitted = False
-                st.experimental_rerun()
+            handle_quiz_end()
+
+def display_current_question():
+    question_tuple = st.session_state.questions[st.session_state.current_question_index]
+    question, options, correct_answer_index, explanation = question_tuple
+    st.write(question)
+    option = st.radio("Choices", options, key=f"option{st.session_state.current_question_index}")
+    if not st.session_state.answer_submitted:
+        if st.button("Submit Answer"):
+            check_answer(option, correct_answer_index, explanation)
+
+def check_answer(option, correct_answer_index, explanation):
+    if options.index(option) == correct_answer_index:
+        st.session_state.correct_answers += 1
+        st.success("Correct!")
+    else:
+        st.error(f"Incorrect! {explanation}")
+    st.session_state.show_next = True
+    st.session_state.answer_submitted = True
+
+def handle_quiz_end():
+    if not st.session_state.show_next:
+        st.balloons()
+        score = f"{st.session_state.correct_answers} out of {len(st.session_state.questions)}"
+        st.write(f"Quiz Finished! You got {score} correct.")
+        # add quiz to history
+        st.session_state.quiz_history.append({
+            'topic': st.session_state.topic,
+            'score': score,
+            'questions': st.session_state.questions
+        })
+        st.session_state.show_next = True  # prevent multiple balloons
+    if st.button("Restart Quiz"):
+        restart_quiz()
+
+# restart quiz
+def restart_quiz():
+    new_questions = st.session_state.questions.copy()
+    random.shuffle(new_questions)
+    st.session_state.questions = new_questions
+    st.session_state.correct_answers = 0
+    st.session_state.current_question_index = 0
+    st.session_state.show_next = False
+    st.session_state.answer_submitted = False
+    st.experimental_rerun()
+
+def calculate_delay(percent_complete):
+    time_delay = 0.09  
+    if percent_complete > 50:
+        time_delay = 0.15 + (percent_complete - 50) * 0.02
+    if percent_complete > 85:
+        exponential_factor = (percent_complete - 85) / 15
+        time_delay += (2 ** exponential_factor) / 100
+    if percent_complete > 95:
+        exponential_factor = (percent_complete - 95) / 5
+        time_delay += 0.5 * (2 ** exponential_factor)
+    if percent_complete > 99:
+        exponential_factor = (percent_complete - 99) / 1
+        time_delay += 2 * (2 ** exponential_factor)
+    return time_delay
+
+with st.sidebar:
+    st.header("Quiz History")
+    for index, quiz in enumerate(st.session_state.quiz_history):
+        if st.button(f"Replay Quiz {index + 1}"):
+            st.session_state.questions = quiz['questions']
+            st.session_state.correct_answers = 0
+            st.session_state.current_question_index = 0
+            st.session_state.show_next = False
+            st.session_state.answer_submitted = False
+            st.experimental_rerun()
 
 if __name__ == "__main__":
     main_screen()
