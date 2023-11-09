@@ -185,19 +185,15 @@ def handle_quiz_end():
         correct_answers = st.session_state.correct_answers
         total_questions = len(st.session_state.questions)
         score = f"{correct_answers} out of {total_questions}"
-        letter_grade = get_letter_grade(correct_answers, total_questions)
 
-        st.markdown(f"Quiz Finished! You got {score} correct. Your grade: <span style='color: {grade_color[letter_grade]};'>{letter_grade}</span>", unsafe_allow_html=True)
+        st.markdown(f"Quiz Finished! You got {score} correct.", unsafe_allow_html=True)
 
-        # save quiz results
+        # save quiz results without grades
         capitalized_topic = capitalize_topic(st.session_state.topic)
         existing_quiz = next((quiz for quiz in st.session_state.quiz_history if quiz['topic'] == capitalized_topic), None)
-        if existing_quiz:
-            existing_quiz['scores'].append((score, letter_grade))
-        else:
+        if not existing_quiz:
             st.session_state.quiz_history.append({
                 'topic': capitalized_topic,
-                'scores': [(score, letter_grade)],
                 'questions': st.session_state.questions
             })
 
@@ -210,6 +206,7 @@ def handle_quiz_end():
         st.session_state.show_next = False
         st.session_state.answer_submitted = False
         st.experimental_rerun()
+
         
 def calculate_delay(percent_complete):
     time_delay = 0.09  
