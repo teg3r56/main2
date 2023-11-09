@@ -230,17 +230,39 @@ def handle_quiz_end():
         letter_grade = get_letter_grade(correct_answers, total_questions)
         grade_color_style = f"color: {grade_color[letter_grade]};"
         score = f"{correct_answers} out of {total_questions}"
+
+        # Display current score and grade
         st.markdown(f"Quiz Finished! You got {score} correct. An <span style='{grade_color_style}'>{letter_grade}</span>", unsafe_allow_html=True)
+
+        # Check if there is a previous score
+        topic = st.session_state.topic
+        existing_quiz = next((quiz for quiz in st.session_state.quiz_history if quiz['topic'] == topic), None)
+        if existing_quiz and 'last_score' in existing_quiz:
+            last_score, last_grade = existing_quiz['last_score']
+            last_grade_color_style = f"color: {grade_color[last_grade]};"
+            st.markdown(f"Your previous score was {last_score}. <span style='{last_grade_color_style}'>{last_grade}</span>", unsafe_allow_html=True)
+
+        # Update the last score for the current topic
+        if existing_quiz:
+            existing_quiz['last_score'] = (score, letter_grade)
+        else:
+            st.session_state.quiz_history.append({
+                'topic': topic,
+                'questions': st.session_state.questions,
+                'last_score': (score, letter_grade)
+            })
 
         st.session_state.show_next = True
 
     if end_placeholder.button("Restart Quiz"):
+        # Shuffle questions here before restarting
         st.session_state.questions = random.sample(st.session_state.questions, len(st.session_state.questions))
         st.session_state.current_question_index = 0
         st.session_state.correct_answers = 0
         st.session_state.show_next = False
         st.session_state.answer_submitted = False
         st.experimental_rerun()
+
         
 def calculate_delay(percent_complete, number_of_questions):
     
