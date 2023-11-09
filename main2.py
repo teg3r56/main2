@@ -122,18 +122,26 @@ def display_current_question():
     question, options, correct_answer_index, explanation = question_tuple
     st.write(question)
     option = st.radio("Choices", options, key=f"option{st.session_state.current_question_index}")
-    
-    if not st.session_state.answer_submitted:
-        submit_button = st.button("Submit Answer")
-        if submit_button:
-            check_answer(option, options, correct_answer_index, explanation)
 
+    # Use placeholders for buttons to manage their state
+    submit_placeholder = st.empty()
+    next_placeholder = st.empty()
+
+    if not st.session_state.answer_submitted:
+        if submit_placeholder.button("Submit Answer"):
+            check_answer(option, options, correct_answer_index, explanation)
+            submit_placeholder.empty()  # Clear the submit button after it's clicked
+
+    # Check if we need to show the 'Next Question' button
     if st.session_state.show_next:
-        if st.button("Next Question"):
-            st.session_state.current_question_index += 1
-            st.session_state.show_next = False
-            st.session_state.answer_submitted = False  
-            st.experimental_rerun()
+        if next_placeholder.button("Next Question"):
+            next_question()
+
+def next_question():
+    st.session_state.current_question_index += 1
+    st.session_state.show_next = False
+    st.session_state.answer_submitted = False  # Reset for the next question
+    st.experimental_rerun()
 
 def check_answer(option, options, correct_answer_index, explanation):
     if options.index(option) == correct_answer_index:
@@ -146,6 +154,7 @@ def check_answer(option, options, correct_answer_index, explanation):
     st.session_state.answer_submitted = True
 
 def handle_quiz_end():
+    end_placeholder = st.empty() 
     if not st.session_state.show_next:
         st.balloons()
         score = f"{st.session_state.correct_answers} out of {len(st.session_state.questions)}"
@@ -156,9 +165,10 @@ def handle_quiz_end():
             'score': score,
             'questions': st.session_state.questions
         })
-        st.session_state.show_next = True  # prevent multiple balloons
-    if st.button("Restart Quiz"):
+        st.session_state.show_next = True
+    if end_placeholder.button("Restart Quiz"):
         restart_quiz()
+        end_placeholder.empty()
 
 # restart quiz
 def restart_quiz():
@@ -199,4 +209,3 @@ with st.sidebar:
 
 if __name__ == "__main__":
     main_screen()
-
