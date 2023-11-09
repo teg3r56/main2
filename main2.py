@@ -76,6 +76,8 @@ if 'questions' not in st.session_state:
 def main_screen():
     if 'show_next' not in st.session_state:
         st.session_state.show_next = False
+    if 'answer_submitted' not in st.session_state:
+        st.session_state.answer_submitted = False
     st.title("Teague Coughlin Quiz Generator")
     topic = st.text_input("Enter the topic you want to create a quiz about:")
     generate_quiz = st.button("Generate Quiz")
