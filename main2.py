@@ -97,7 +97,7 @@ def main_screen():
         generate_quiz = st.button("Generate Quiz")
         
     with col2:
-        for _ in range(4):  # alignment adjust
+        for _ in range(10):  # alignment adjust
             st.empty()
         number_of_questions = st.slider("", 1, 20, 5, key='num_questions')
 
