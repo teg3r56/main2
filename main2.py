@@ -219,17 +219,17 @@ def handle_quiz_end():
         st.session_state.show_next = True
 
     unique_key = f"restart_{int(time.time())}"
-    if end_placeholder.button("Restart Quiz", key=unique_key):
-        # Directly reset the session state variables
-        new_questions = st.session_state.questions.copy()
-        random.shuffle(new_questions)
-        st.session_state.questions = new_questions
+    if end_placeholder.button("Restart Quiz"):
+        # Reset quiz state
+        st.session_state.questions = []
         st.session_state.correct_answers = 0
         st.session_state.current_question_index = 0
         st.session_state.show_next = False
         st.session_state.answer_submitted = False
+        # Clear any input or selections
+        st.session_state.topic = ""
+        # Rerun the app
         st.experimental_rerun()
-        end_placeholder.empty()
 
 def calculate_delay(percent_complete):
     time_delay = 0.09  
