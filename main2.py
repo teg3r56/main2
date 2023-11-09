@@ -175,32 +175,16 @@ def handle_quiz_end():
         total_questions = len(st.session_state.questions)
         score = f"{correct_answers} out of {total_questions}"
         letter_grade = get_letter_grade(correct_answers, total_questions)
-        
-        capitalized_topic = capitalize_topic(st.session_state.topic)
-        existing_entry = next((entry for entry in st.session_state.quiz_history if entry['topic'] == capitalized_topic), None)
 
-        if existing_entry:
-            if 'scores' not in existing_entry:
-                existing_entry['scores'] = []
-            existing_entry['scores'].append((score, letter_grade))
-        else:
-            new_entry = {
-                'topic': capitalized_topic,
-                'scores': [(score, letter_grade)],
-                'questions': st.session_state.questions
-            }
-            st.session_state.quiz_history.append(new_entry)
-
-        # Color of the grade
+        # grade color
         grade_color = {
             'A': '#4CAF50',  # Green
             'B': '#90EE90',  # Light Green
             'C': '#FFC107',  # Amber
             'D': '#FF9800',  # Orange
             'F': '#F44336',  # Red
-        }.get(letter_grade, '#9E9E9E')  # Grey for undefined grades
+        }.get(letter_grade, '#9E9E9E')  # undefined grades
 
-        # Display the score and colored grade
         st.write(f"Quiz Finished! You got {score} correct. Your grade: ", unsafe_allow_html=True)
         st.markdown(f"<span style='color: {grade_color};'>{letter_grade}</span>", unsafe_allow_html=True)
         st.session_state.show_next = True
