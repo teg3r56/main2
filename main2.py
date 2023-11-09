@@ -31,11 +31,11 @@ def generate_questions_from_topic(topic):
                 messages=[
                     {
                         "role": "system",
-                        "content": "Generate a list of multiple-choice questions with answers and explanations. The output should be in the form of a Python list, with each question represented as a tuple. Each tuple should contain the question text, a list of options, the index of the correct option, and an explanation. There should only be one pair of brackets surrounding the entire list, and no additional brackets around individual tuples."
+                        "content": f"Generate a {number_of_questions} list of multiple-choice questions with answers and explanations. The output should be in the form of a Python list, with each question represented as a tuple. Each tuple should contain the question text, a list of options, the index of the correct option, and an explanation. There should only be one pair of brackets surrounding the entire list, and no additional brackets around individual tuples."
                     },
                     {
                         "role": "user", 
-                        "content": f"Create as many needed multiple-choice questions about {topic}. "
+                        "content": f"Create {number_of_questions} multiple-choice questions about {topic}. "
                                                         "In this exact format, only one pair of brackets surrounding all questions: "
                                                         "[('question', ['options', 'options', 'options'], correct_option_index, 'explanation')] "
                                                         "Example: ["
@@ -88,11 +88,16 @@ def main_screen():
 
     st.title("Teague Coughlin Quiz Generator")
     topic = st.text_input("Enter the topic you want to create a quiz about:")
+    
+    # slider
+    number_of_questions = st.slider("Select the number of questions", 1, 20, 5, key='num_questions')
+    
     generate_quiz = st.button("Generate Quiz")
     console = st.empty()
 
     if generate_quiz and topic:
-        st.session_state.topic = topic  
+        st.session_state.topic = topic
+        st.session_state.number_of_questions = number_of_questions
         with st.empty():
             for percent_complete in range(101):
                 # loading bar logic
