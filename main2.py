@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import streamlit as st
 import openai
 import ast
@@ -116,7 +117,41 @@ def main_screen():
             display_current_question()
         else:
             handle_quiz_end()
+            
+def display_grade_history_with_graph(current_quiz):
+    if current_quiz:
+        scores = current_quiz.get('scores', [])
+        if scores:
+            # Extract scores and convert to numeric values for graph
+            score_values = [int(score.split()[0]) for score, _ in scores]
+            grades = [grade for _, grade in scores]
 
+            # Plot the graph
+            fig, ax = plt.subplots()
+            ax.plot(score_values, 'o-')
+            ax.set_title('Score Over Time')
+            ax.set_xlabel('Attempt')
+            ax.set_ylabel('Score')
+            ax.set_xticks(range(len(scores)))
+            ax.set_xticklabels(range(1, len(scores) + 1))
+            st.sidebar.pyplot(fig)
+
+            # Display color-coded grades
+            for score, grade in scores:
+                grade_color = {
+                    'A': 'lightgreen',
+                    'B': 'yellowgreen',
+                    'C': 'yellow',
+                    'D': 'orange',
+                    'F': 'red'
+                }.get(grade, 'lightgrey')
+
+                st.sidebar.markdown(
+                    f"<div style='border:2px solid;padding:10px;margin-bottom:10px;color:white;background-color:{grade_color};'>"
+                    f"Score: {score} - Grade: {grade}</div>",
+                    unsafe_allow_html=True
+                )
+                
 def display_current_question():
     question_tuple = st.session_state.questions[st.session_state.current_question_index]
     question, options, correct_answer_index, explanation = question_tuple
@@ -178,8 +213,10 @@ def handle_quiz_end():
         st.write(f"Quiz Finished! You got {score} correct. Your grade: {letter_grade}.")
         
         capitalized_topic = capitalize_topic(st.session_state.topic)
-        
-        existing_entry = next((entry for entry in st.session_state.quiz_history if entry['topic'] == capitalized_topic), None)
+        current_quiz = next((entry for entry in st.session_state.quiz_history if entry['topic'] == capitalized_topic), None)
+    
+        if current_quiz:
+            display_grade_history_with_graph(current_quiz)
         
         if existing_entry:
             if 'scores' not in existing_entry:
