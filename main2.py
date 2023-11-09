@@ -153,19 +153,29 @@ def check_answer(option, options, correct_answer_index, explanation):
     st.session_state.show_next = True
     st.session_state.answer_submitted = True
 
+def capitalize_topic(topic):
+    words = topic.split()
+    capitalized_words = [word if word[0].isupper() else word.capitalize() for word in words]
+    return ' '.join(capitalized_words)
+
 def handle_quiz_end():
     end_placeholder = st.empty() 
     if not st.session_state.show_next:
         st.balloons()
         score = f"{st.session_state.correct_answers} out of {len(st.session_state.questions)}"
         st.write(f"Quiz Finished! You got {score} correct.")
-        # add quiz to history
-        capitalized_topic = st.session_state.topic.title()
-        st.session_state.quiz_history.append({
-            'topic': capitalized_topic,
-            'score': score,
-            'questions': st.session_state.questions
-        })
+        
+        capitalized_topic = capitalize_topic(st.session_state.topic)
+
+        existing_entry = next((entry for entry in st.session_state.quiz_history if entry['topic'] == capitalized_topic), None)
+        
+        if not existing_entry:
+            st.session_state.quiz_history.append({
+                'topic': capitalized_topic,
+                'score': score,
+                'questions': st.session_state.questions
+            })
+
         st.session_state.show_next = True
     if end_placeholder.button("Restart Quiz"):
         restart_quiz()
