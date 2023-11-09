@@ -167,6 +167,15 @@ def get_letter_grade(correct, total):
     elif percentage >= 60: return 'D'
     else: return 'F'
         
+# Global grade color dictionary
+grade_color = {
+    'A': '#4CAF50',  # Green
+    'B': '#90EE90',  # Light Green
+    'C': '#FFC107',  # Amber
+    'D': '#FF9800',  # Orange
+    'F': '#F44336',  # Red
+}
+
 def handle_quiz_end():
     end_placeholder = st.empty()
     if not st.session_state.show_next:
@@ -176,17 +185,8 @@ def handle_quiz_end():
         score = f"{correct_answers} out of {total_questions}"
         letter_grade = get_letter_grade(correct_answers, total_questions)
 
-        # Color of the grade
-        grade_color = {
-            'A': '#4CAF50',  # Green
-            'B': '#90EE90',  # Light Green
-            'C': '#FFC107',  # Amber
-            'D': '#FF9800',  # Orange
-            'F': '#F44336',  # Red
-        }.get(letter_grade, '#9E9E9E')  # Grey for undefined grades
-
         # Display the score and colored grade in one line
-        st.markdown(f"Quiz Finished! You got {score} correct. Your grade: <span style='color: {grade_color};'>{letter_grade}</span>", unsafe_allow_html=True)
+        st.markdown(f"Quiz Finished! You got {score} correct. Your grade: <span style='color: {grade_color[letter_grade]};'>{letter_grade}</span>", unsafe_allow_html=True)
         
         # Check if there is a previous score to display
         if len(st.session_state.quiz_history) > 0:
@@ -195,27 +195,32 @@ def handle_quiz_end():
             if last_scores:
                 last_score, last_grade = last_scores[-1]
                 # Color for the previous grade
-                last_grade_color = grade_color.get(last_grade, '#9E9E9E')
+                last_grade_color = grade_color[last_grade]
                 # Display the last score with colored grade letter
                 st.markdown(f"Your previous attempt: <span style='color: {last_grade_color};'>{last_grade}</span> ({last_score})", unsafe_allow_html=True)
         
         # Save the current quiz results
         if 'topic' in st.session_state:
-            topic = st.session_state.topic
+            # Capitalize topic before saving
+            capitalized_topic = capitalize_topic(st.session_state.topic)
             # Check if the topic is already in the history
-            if topic in [q['topic'] for q in st.session_state.quiz_history]:
-                # Find the quiz in history and append the new score
-                for quiz in st.session_state.quiz_history:
-                    if quiz['topic'] == topic:
-                        quiz['scores'].append((score, letter_grade))
-                        break
+            existing_quiz = next((quiz for quiz in st.session_state.quiz_history if quiz['topic'] == capitalized_topic), None)
+            if existing_quiz:
+                # Append the new score
+                existing_quiz['scores'].append((score, letter_grade))
             else:
                 # Add a new entry for the topic in the history
                 st.session_state.quiz_history.append({
-                    'topic': topic,
+                    'topic': capitalized_topic,
                     'scores': [(score, letter_grade)],
                     'questions': st.session_state.questions
                 })
+
+        st.session_state.show_next = True
+
+    if end_placeholder.button("Restart Quiz"):
+        restart_quiz()
+        end_placeholder.empty()
 
         st.session_state.show_next = True
 
