@@ -44,6 +44,7 @@ def generate_questions_from_topic(topic, number_of_questions):
                                                         "'Alkali metals have an oxidation state of +1 as they tend to lose one electron.')]"
                     }
                 ]
+                temperature=0.1
             )
 
             content = response.choices[0].message.content.strip()
