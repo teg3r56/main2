@@ -109,9 +109,9 @@ def main_screen():
         generate_quiz = st.button("Generate Quiz")
         
     with col2:
-        number_of_questions = st.slider("", 1, 20, 5, key='num_questions')
         st.caption("Adjust the number of questions for the quiz")
-
+        number_of_questions = st.slider("", 1, 20, 5, key='num_questions')
+        
     console = st.empty()
 
     if generate_quiz and topic:
