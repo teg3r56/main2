@@ -160,8 +160,9 @@ def handle_quiz_end():
         score = f"{st.session_state.correct_answers} out of {len(st.session_state.questions)}"
         st.write(f"Quiz Finished! You got {score} correct.")
         # add quiz to history
+        capitalized_topic = st.session_state.topic.title()
         st.session_state.quiz_history.append({
-            'topic': st.session_state.topic,
+            'topic': capitalized_topic,
             'score': score,
             'questions': st.session_state.questions
         })
@@ -198,8 +199,9 @@ def calculate_delay(percent_complete):
 
 with st.sidebar:
     st.header("Quiz History")
-    for index, quiz in enumerate(st.session_state.quiz_history):
-        if st.button(f"Replay Quiz {index + 1}"):
+    for quiz in st.session_state.quiz_history:
+        topic_display = quiz['topic']
+        if st.button(f"Replay {topic_display} Quiz"):
             st.session_state.questions = quiz['questions']
             st.session_state.correct_answers = 0
             st.session_state.current_question_index = 0
