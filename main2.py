@@ -103,14 +103,16 @@ def main_screen():
     )
     
     # columns
-    col1, col2 = st.columns([1, 4])
+    col1, col2, col3 = st.columns([1, 4, 2])
 
     with col1:
         generate_quiz = st.button("Generate Quiz")
         
     with col2:
-        st.caption("Adjust the number of questions for the quiz")
         number_of_questions = st.slider("", 1, 20, 5, key='num_questions')
+
+    with col3:
+        st.caption("Adjust the number of questions for the quiz")
         
     console = st.empty()
 
