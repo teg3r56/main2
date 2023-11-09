@@ -108,8 +108,8 @@ def main_screen():
         /* Target the caption and adjust its position */
         .stMarkdown {
             position: relative;
-            top: 0px; /* Adjust this value as needed */
-            left: 10px; /* Adjust this value as needed */
+            top: -10px; /* Adjust this value as needed */
+            left: 0px; /* Adjust this value as needed */
             font-size: 0.8em; /* Optional: Adjust the font size */
         }
         </style>
