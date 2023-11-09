@@ -197,13 +197,32 @@ def handle_quiz_end():
                 # Color for the previous grade
                 last_grade_color = grade_color.get(last_grade, '#9E9E9E')
                 # Display the last score with colored grade letter
-                st.markdown(f"Previous attempt: <span style='color: {last_grade_color};'>{last_grade}</span> ({last_score})", unsafe_allow_html=True)
+                st.markdown(f"Your previous attempt: <span style='color: {last_grade_color};'>{last_grade}</span> ({last_score})", unsafe_allow_html=True)
         
+        # Save the current quiz results
+        if 'topic' in st.session_state:
+            topic = st.session_state.topic
+            # Check if the topic is already in the history
+            if topic in [q['topic'] for q in st.session_state.quiz_history]:
+                # Find the quiz in history and append the new score
+                for quiz in st.session_state.quiz_history:
+                    if quiz['topic'] == topic:
+                        quiz['scores'].append((score, letter_grade))
+                        break
+            else:
+                # Add a new entry for the topic in the history
+                st.session_state.quiz_history.append({
+                    'topic': topic,
+                    'scores': [(score, letter_grade)],
+                    'questions': st.session_state.questions
+                })
+
         st.session_state.show_next = True
 
     if end_placeholder.button("Restart Quiz"):
         restart_quiz()
         end_placeholder.empty()
+
 
 # restart quiz
 def restart_quiz():
