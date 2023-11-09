@@ -233,9 +233,10 @@ with st.sidebar:
             st.session_state.answer_submitted = False
             st.experimental_rerun()
         
-        if len(quiz['scores']) > 1:
+        scores = quiz.get('scores', [])  
+        if len(scores) > 1:
             st.write(f"{topic_display} Grades:")
-            for score, grade in quiz['scores']:
+            for score, grade in scores:
                 st.write(f"{grade} ({score})")
 
 if __name__ == "__main__":
