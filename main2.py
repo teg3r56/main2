@@ -103,7 +103,7 @@ def main_screen():
     )
     
     # columns
-    col1, col2, col3 = st.columns([1, 4, 2])
+    col1, col2, col3 = st.columns([2, 2, 3])
 
     with col1:
         generate_quiz = st.button("Generate Quiz")
