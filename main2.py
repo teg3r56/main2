@@ -252,8 +252,8 @@ def handle_quiz_end():
         
 def calculate_delay(percent_complete, number_of_questions):
     
-    base_time = 0.01  # base time for 1 question
-    incremental_time = 0.01  # additional time per question
+    base_time = 0.02  # base time for 1 question
+    incremental_time = 0.025  # additional time per question
 
     time_delay = base_time + ((number_of_questions - 1) * incremental_time)
 
