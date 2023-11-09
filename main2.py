@@ -174,10 +174,12 @@ def display_current_question():
     if not st.session_state.answer_submitted:
         if submit_placeholder.button("Submit Answer"):
             check_answer(option, options, correct_answer_index, explanation)
-            submit_placeholder.empty()  
+            submit_placeholder.empty()
 
+    # Check if we are on the last question and change the button text accordingly
     if st.session_state.show_next:
-        if next_placeholder.button("Next Question"):
+        button_label = "Review" if st.session_state.current_question_index == len(st.session_state.questions) - 1 else "Next Question"
+        if next_placeholder.button(button_label):
             next_question()
 
 def next_question():
@@ -225,29 +227,20 @@ def handle_quiz_end():
         st.balloons()
         correct_answers = st.session_state.correct_answers
         total_questions = len(st.session_state.questions)
+        letter_grade = get_letter_grade(correct_answers, total_questions)
+        grade_color_style = f"color: {grade_color[letter_grade]};"
         score = f"{correct_answers} out of {total_questions}"
-
-        st.markdown(f"Quiz Finished! You got {score} correct.", unsafe_allow_html=True)
-
-        # save quiz results without grades
-        capitalized_topic = capitalize_topic(st.session_state.topic)
-        existing_quiz = next((quiz for quiz in st.session_state.quiz_history if quiz['topic'] == capitalized_topic), None)
-        if not existing_quiz:
-            st.session_state.quiz_history.append({
-                'topic': capitalized_topic,
-                'questions': st.session_state.questions
-            })
+        st.markdown(f"Quiz Finished! You got {score} correct. An <span style='{grade_color_style}'>{letter_grade}</span>", unsafe_allow_html=True)
 
         st.session_state.show_next = True
 
     if end_placeholder.button("Restart Quiz"):
-        random.shuffle(st.session_state.questions)
+        st.session_state.questions = random.sample(st.session_state.questions, len(st.session_state.questions))
         st.session_state.current_question_index = 0
         st.session_state.correct_answers = 0
         st.session_state.show_next = False
         st.session_state.answer_submitted = False
         st.experimental_rerun()
-
         
 def calculate_delay(percent_complete, number_of_questions):
     
