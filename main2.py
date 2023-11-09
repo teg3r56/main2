@@ -23,7 +23,7 @@ def parse_questions(content):
         st.error(f"Error while parsing content: {e}")
         return None
 
-def generate_questions_from_topic(topic):
+def generate_questions_from_topic(topic, number_of_questions):
     with st.spinner('Formatting your quiz...'):
         try:
             response = client.chat.completions.create(
@@ -87,12 +87,20 @@ def main_screen():
         st.session_state.answer_submitted = False
 
     st.title("Teague Coughlin Quiz Generator")
-    topic = st.text_input("Enter the topic you want to create a quiz about:")
     
-    # slider
-    number_of_questions = st.slider("Select the number of questions", 1, 20, 5, key='num_questions')
+    # columns align
+    col1, col2, col3 = st.columns([5, 2, 3])  
+
+    with col1:
+        topic = st.text_input("Enter the topic you want to create a quiz about:")
     
-    generate_quiz = st.button("Generate Quiz")
+    with col2:
+        # slider
+        number_of_questions = st.slider("", 1, 20, 5, key='num_questions')  
+
+    with col3:
+        generate_quiz = st.button("Generate Quiz")
+
     console = st.empty()
 
     if generate_quiz and topic:
@@ -108,7 +116,7 @@ def main_screen():
                 time.sleep(time_delay)
         
         console.text("Finalizing...")
-        quiz_generated = generate_questions_from_topic(topic)
+        quiz_generated = generate_questions_from_topic(topic, st.session_state.number_of_questions)  # Pass the number of questions
         if quiz_generated:
             st.progress(1.0)
             console.text("Quiz successfully generated. Starting quiz...")
