@@ -140,7 +140,7 @@ def display_current_question():
 def next_question():
     st.session_state.current_question_index += 1
     st.session_state.show_next = False
-    st.session_state.answer_submitted = False  # Reset for the next question
+    st.session_state.answer_submitted = False
     st.experimental_rerun()
 
 def check_answer(option, options, correct_answer_index, explanation):
@@ -157,25 +157,39 @@ def capitalize_topic(topic):
     words = topic.split()
     capitalized_words = [word if word[0].isupper() else word.capitalize() for word in words]
     return ' '.join(capitalized_words)
-
+    
+def get_letter_grade(correct, total):
+    if total == 0: return 'N/A'  # division by zero lol
+    percentage = (correct / total) * 100
+    if percentage >= 90: return 'A'
+    elif percentage >= 80: return 'B'
+    elif percentage >= 70: return 'C'
+    elif percentage >= 60: return 'D'
+    else: return 'F'
+        
 def handle_quiz_end():
-    end_placeholder = st.empty() 
+    end_placeholder = st.empty()
     if not st.session_state.show_next:
         st.balloons()
-        score = f"{st.session_state.correct_answers} out of {len(st.session_state.questions)}"
-        st.write(f"Quiz Finished! You got {score} correct.")
+        correct_answers = st.session_state.correct_answers
+        total_questions = len(st.session_state.questions)
+        score = f"{correct_answers} out of {total_questions}"
+        letter_grade = get_letter_grade(correct_answers, total_questions)
+        st.write(f"Quiz Finished! You got {score} correct. Your grade: {letter_grade}.")
         
         capitalized_topic = capitalize_topic(st.session_state.topic)
-
-        existing_entry = next((entry for entry in st.session_state.quiz_history if entry['topic'] == capitalized_topic), None)
         
-        if not existing_entry:
+        # Update the history with the new score
+        existing_entry = next((entry for entry in st.session_state.quiz_history if entry['topic'] == capitalized_topic), None)
+        if existing_entry:
+            existing_entry['scores'].append((score, letter_grade))
+        else:
             st.session_state.quiz_history.append({
                 'topic': capitalized_topic,
-                'score': score,
+                'scores': [(score, letter_grade)],
                 'questions': st.session_state.questions
             })
-
+        
         st.session_state.show_next = True
     if end_placeholder.button("Restart Quiz"):
         restart_quiz()
@@ -218,6 +232,11 @@ with st.sidebar:
             st.session_state.show_next = False
             st.session_state.answer_submitted = False
             st.experimental_rerun()
+        
+        if len(quiz['scores']) > 1:
+            st.write(f"{topic_display} Grades:")
+            for score, grade in quiz['scores']:
+                st.write(f"{grade} ({score})")
 
 if __name__ == "__main__":
     main_screen()
