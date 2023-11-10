@@ -141,12 +141,10 @@ def main_screen():
         
     st.markdown("""
     <style>
-    .full-width-button {
-        display: block;
+    div.stButton > button:first-child {
         width: 100%;
     }
-    </style>
-    """, unsafe_allow_html=True)
+    </style>""", unsafe_allow_html=True)
     
     st.title("Teague Coughlin Study Tool")
     
@@ -154,11 +152,9 @@ def main_screen():
 
     col1, col2 = st.columns(2)
     with col1:
-        st.button("Generate Quiz", key="generate_quiz", help="Click to generate a quiz based on the topic provided.", 
-                  on_click=None, args=None, kwargs=None, disabled=False, class_name='full-width-button')
+        generate_quiz = st.button("Generate Quiz")
     with col2:
-        st.button("Generate Flashcards", key="generate_flashcards", help="Click to generate flashcards based on the topic provided.",
-                  on_click=None, args=None, kwargs=None, disabled=False, class_name='full-width-button')
+        generate_flashcards = st.button("Generate Flashcards")
 
     if generate_quiz or generate_flashcards:
         number_of_questions = st.number_input("Number of Questions", min_value=1, max_value=40, value=5)
