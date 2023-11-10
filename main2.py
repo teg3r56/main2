@@ -81,8 +81,9 @@ def generate_questions_from_topic(topic, number_of_questions_api, number_of_ques
     for percent_complete in range(100):
         time.sleep(calculate_delay(percent_complete, number_of_questions_loading))
         my_bar.progress(percent_complete + 1)
-    with st.spinner('Formatting your quiz...'):
+    st.write("Progress bar completed.")  # Debug log
 
+    with st.spinner('Formatting your quiz...'):
         try:
             response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
@@ -104,8 +105,10 @@ def generate_questions_from_topic(topic, number_of_questions_api, number_of_ques
                     }
                 ]
             )
-
+            
+            st.write("API call successful.")  # debug log
             content = response.choices[0].message.content.strip()
+            st.write(f"API Response: {content}")
 
             if not content.startswith("[") or not content.endswith("]"):
                 content = "[" + content.replace("]\n\n[", ", ") + "]"
@@ -123,6 +126,7 @@ def generate_questions_from_topic(topic, number_of_questions_api, number_of_ques
                 return False
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
+            st.write(f"Exception details: {str(e)}")  # Debug log
             return False
 
 if 'questions' not in st.session_state:
