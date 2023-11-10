@@ -240,27 +240,21 @@ def initialize_state_variables():
         st.session_state['display_flashcards'] = False
 
 def handle_generation(topic, generate_quiz):
-    number_of_questions = st.session_state['number_of_questions']
-    let_quizon_decide = st.session_state['let_quizon_decide']
-
-    question_count_for_api = 'as many as needed' if let_quizon_decide else number_of_questions
-    question_count_for_loading_bar = 10 if let_quizon_decide else number_of_questions
-
+    number_of_items = st.session_state['number_of_questions']
     if generate_quiz:
-        quiz_generated = generate_questions_from_topic(topic, question_count_for_api, question_count_for_loading_bar)
-        if not quiz_generated:
+        quiz_generated = generate_questions_from_topic(topic, number_of_items)
+        if quiz_generated:
+            st.session_state['display_quiz'] = True
+        else:
             st.error("Failed to generate quiz.")
             return False
-        else:
-            st.session_state['display_quiz'] = True  # Set a flag to display the quiz
     else:
-        flashcards_generated = generate_flashcards_from_topic(topic, question_count_for_api, question_count_for_loading_bar)
-        if not flashcards_generated:
+        flashcards_generated = generate_flashcards_from_topic(topic, number_of_items)
+        if flashcards_generated:
+            st.session_state['display_flashcards'] = True
+        else:
             st.error("Failed to generate flashcards.")
             return False
-        else:
-            st.session_state['display_flashcards'] = True  # Set a flag to display flashcards
-
 
 def display_flashcards():
     if 'flashcards' in st.session_state and st.session_state.flashcards:
