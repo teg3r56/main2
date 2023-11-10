@@ -23,10 +23,10 @@ def parse_questions(content):
         st.error(f"Error while parsing content: {e}")
         return None
         
-def generate_flashcards_from_topic(topic, number_of_flashcards):
+def generate_flashcards_from_topic(topic, number_of_flashcards_api, number_of_flashcards_loading):
     my_bar = st.progress(0)
     for percent_complete in range(100):
-        time.sleep(calculate_delay(percent_complete, number_of_flashcards))
+        time.sleep(calculate_delay(percent_complete, number_of_flashcards_loading))
         my_bar.progress(percent_complete + 1)
 
     with st.spinner('Creating your flashcards...'):
