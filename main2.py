@@ -24,7 +24,13 @@ def parse_questions(content):
         return None
         
 def generate_flashcards_from_topic(topic, number_of_flashcards):
+    my_bar = st.progress(0)
+    for percent_complete in range(100):
+        time.sleep(calculate_delay(percent_complete, number_of_flashcards))
+        my_bar.progress(percent_complete + 1)
+        
     with st.spinner('Creating your flashcards...'):
+        
         try:
             response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
@@ -340,14 +346,13 @@ def handle_quiz_end():
         st.experimental_rerun()
 
         
-def calculate_delay(percent_complete, number_of_questions):
-    
-    base_time = 0.02  # base time for 1 question
-    incremental_time = 0.025  # additional time per question
+def calculate_delay(percent_complete, number_of_items):
+    base_time = 0.02  # base time for 1 item
+    incremental_time = 0.025  # additional time per item
 
-    time_delay = base_time + ((number_of_questions - 1) * incremental_time)
+    time_delay = base_time + ((number_of_items - 1) * incremental_time)
 
-    # Keep the exponential growth sections
+    # Exponential growth for later percentages
     if percent_complete > 50:
         time_delay *= (1 + (percent_complete - 50) / 50)
     if percent_complete > 85:
