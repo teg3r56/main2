@@ -194,16 +194,32 @@ def main_screen():
     )
     
     # columns
-    col1, col2, col3 = st.columns([2, 3, 3])
+    col1, col2, col3, col4, col5 = st.columns([2, 1, 1, 1, 2])
 
     with col1:
         generate_quiz = st.button("Generate Quiz")
         
     with col2:
-        number_of_questions = st.slider("", 1, 40, 5, key='num_questions')
+        if generate_quiz:
+            if st.button("Start Quiz"):
+                st.session_state.quiz_or_flashcard = "quiz"
 
     with col3:
-        st.caption("Adjust the number of questions for the quiz")
+        if generate_quiz:
+            number_of_questions = st.slider("", 1, 40, 5, key='num_questions')
+
+    with col4:
+        if generate_quiz:
+            if st.button("Create Flashcards"):
+                flashcards_generated = generate_flashcards_from_topic(topic, st.session_state.number_of_questions)
+                if flashcards_generated:
+                    st.session_state.quiz_or_flashcard = "flashcard"
+                else:
+                    st.error("Failed to generate flashcards. Please try again.")
+
+    with col5:
+        if generate_quiz:
+            st.caption("Adjust the number of questions for the quiz")
     
     console = st.empty()
 
