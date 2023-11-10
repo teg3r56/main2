@@ -218,24 +218,25 @@ def initialize_state_variables():
 def handle_generation(topic, generate_quiz):
     number_of_questions = st.session_state['number_of_questions']
     let_quizon_decide = st.session_state['let_quizon_decide']
-    st.session_state.generation_started = True  
+    st.session_state.generation_started = True
 
     question_count_for_api = 'as many as needed' if let_quizon_decide else number_of_questions
     question_count_for_loading_bar = 10 if let_quizon_decide else number_of_questions
 
     if generate_quiz:
         quiz_generated = generate_questions_from_topic(topic, question_count_for_api, question_count_for_loading_bar)
-        st.session_state.generation_started = False  # reset gen status
         if not quiz_generated:
             st.error("Failed to generate quiz.")
             return False
     else:
         flashcards_generated = generate_flashcards_from_topic(topic, question_count_for_api, question_count_for_loading_bar)
-        st.session_state.generation_started = False 
         if not flashcards_generated:
             st.error("Failed to generate flashcards.")
             return False
-    return True
+
+    st.session_state.generation_started = False  
+    st.experimental_rerun()  
+
 
 def display_flashcards():
     if 'flashcards' in st.session_state and st.session_state.flashcards:
@@ -277,10 +278,13 @@ def display_current_question():
             next_question()
 
 def next_question():
-    st.session_state.current_question_index += 1
-    st.session_state.show_next = False
-    st.session_state.answer_submitted = False
-    st.experimental_rerun()
+    if st.session_state.current_question_index < len(st.session_state.questions) - 1:
+        st.session_state.current_question_index += 1
+        st.session_state.show_next = False
+        st.session_state.answer_submitted = False
+        st.experimental_rerun()
+    else:
+        handle_quiz_end()
 
 def check_answer(option, options, correct_answer_index, explanation):
     if options.index(option) == correct_answer_index:
