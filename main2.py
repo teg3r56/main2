@@ -156,12 +156,15 @@ def main_screen():
 
     if generate_quiz or generate_flashcards:
         st.session_state.quiz_or_flashcard = "quiz" if generate_quiz else "flashcard"
-        st.session_state.number_of_questions = st.number_input("Number of Questions", min_value=1, max_value=40, value=5, key='num_questions_input')
         st.session_state.let_quizon_decide = st.checkbox("Let QuizOn Decide", key='quiz_decide_checkbox')
+
+        if not st.session_state.let_quizon_decide:
+            st.session_state.number_of_questions = st.number_input("Number of Questions", min_value=1, max_value=40, value=5, key='num_questions_input')
 
         if st.button("Generate", key='generate_button'):
             topic = capitalize_topic(topic)
-            handle_generation(topic, st.session_state.quiz_or_flashcard == "quiz")
+            number_of_items = "As many as needed" if st.session_state.let_quizon_decide else st.session_state.number_of_questions
+            handle_generation(topic, st.session_state.quiz_or_flashcard == "quiz", number_of_items)
 
     if st.session_state.get('display_quiz', False):
         display_current_question()
@@ -196,8 +199,7 @@ def initialize_state_variables():
         st.session_state['display_flashcards'] = False
 
 # Handle generation function
-def handle_generation(topic, generate_quiz):
-    number_of_items = st.session_state['number_of_questions']
+def handle_generation(topic, generate_quiz, number_of_items):
     if generate_quiz:
         quiz_generated = generate_questions_from_topic(topic, number_of_items)
         if not quiz_generated:
