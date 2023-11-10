@@ -28,7 +28,7 @@ def generate_flashcards_from_topic(topic, number_of_flashcards):
     for percent_complete in range(100):
         time.sleep(calculate_delay(percent_complete, number_of_flashcards))
         my_bar.progress(percent_complete + 1)
-        
+
     with st.spinner('Creating your flashcards...'):
         
         try:
@@ -77,6 +77,10 @@ def parse_flashcards(content):
         return None
         
 def generate_questions_from_topic(topic, number_of_questions):
+    my_bar = st.progress(0)
+    for percent_complete in range(100):
+        time.sleep(calculate_delay(percent_complete, number_of_questions))
+        my_bar.progress(percent_complete + 1)
     with st.spinner('Formatting your quiz...'):
         try:
             response = client.chat.completions.create(
