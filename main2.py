@@ -245,7 +245,7 @@ def main_screen():
                     if flashcards_generated:
                         st.session_state.quiz_or_flashcard = "flashcard"
                     else:
-                        st.error("Failed to generate flashcards. Please try again.")"):
+                        st.error("Failed to generate flashcards. Please try again."):
                     
             st.session_state.quiz_or_flashcard = "flashcard"
             
