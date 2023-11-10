@@ -180,9 +180,12 @@ def main_screen():
 
     if generate_quiz or generate_flashcards:
         st.session_state.quiz_or_flashcard = "quiz" if generate_quiz else "flashcard"
-        st.session_state.number_of_questions = st.number_input("Number of Questions", min_value=1, max_value=40, value=5)
-        st.session_state.let_quizon_decide = st.checkbox("Let QuizOn Decide")
-        if st.button("Generate"):
+        
+        # Moved these widgets outside of the if block to avoid duplicate widget IDs
+        st.session_state.number_of_questions = st.number_input("Number of Questions", min_value=1, max_value=40, value=5, key='num_questions_input')
+        st.session_state.let_quizon_decide = st.checkbox("Let QuizOn Decide", key='quiz_decide_checkbox')
+
+        if st.button("Generate", key='generate_button'):
             topic = capitalize_topic(topic)
             handle_generation(topic, st.session_state.quiz_or_flashcard == "quiz")
 
@@ -191,6 +194,13 @@ def main_screen():
 
     elif st.session_state.get('display_flashcards', False):
         display_flashcards()  # Display the flashcards
+
+    if st.session_state.generation_started:
+        if st.session_state.quiz_or_flashcard == "quiz":
+            display_current_question()
+        elif st.session_state.quiz_or_flashcard == "flashcard":
+            display_flashcards()
+        st.session_state.generation_started = False
         
     if st.session_state.get('display_quiz', False):
         display_current_question()  # Display the quiz
