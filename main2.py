@@ -22,7 +22,54 @@ def parse_questions(content):
     except Exception as e:
         st.error(f"Error while parsing content: {e}")
         return None
+        
+def generate_flashcards_from_topic(topic, number_of_flashcards):
+    with st.spinner('Creating your flashcards...'):
+        try:
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                temperature=0.5,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": f"Generate a list of key concepts and definitions about {topic}. Please provide exactly {number_of_flashcards} flashcards. Format the output as a Python list, with each flashcard as a tuple containing the concept and its definition."
+                    },
+                    {
+                        "role": "user", 
+                        "content": f"Create flashcards for key concepts about {topic} with exactly {number_of_flashcards} flashcards. Format the output as: [('concept', 'definition'), ...]"
+                    }
+                ]
+            )
 
+            content = response.choices[0].message.content.strip()
+            flashcards = parse_flashcards(content)
+
+            if flashcards:
+                st.session_state.flashcards = flashcards
+                st.session_state.current_flashcard_index = 0
+                return True
+            else:
+                st.error("Could not parse the API response into flashcards.")
+                return False
+        except Exception as e:
+            st.error(f"An error occurred: {str(e)}")
+            return False
+
+def parse_flashcards(content):
+    try:
+        valid_flashcards = ast.literal_eval(content)
+        if isinstance(valid_flashcards, list) and all(isinstance(flashcard, tuple) and len(flashcard) == 2 for flashcard in valid_flashcards):
+            return valid_flashcards
+        else:
+            st.error("The API response is not in the expected format of a list of tuples.")
+            return None
+    except SyntaxError as e:
+        st.error(f"Syntax error while parsing content: {e}")
+        return None
+    except Exception as e:
+        st.error(f"Error while parsing content: {e}")
+        return None
+        
 def generate_questions_from_topic(topic, number_of_questions):
     with st.spinner('Formatting your quiz...'):
         try:
@@ -86,10 +133,38 @@ def main_screen():
     if 'answer_submitted' not in st.session_state:
         st.session_state.answer_submitted = False
 
-    st.title("Teague Coughlin Quiz Generator")
+    if 'quiz_generated' not in st.session_state:
+        st.session_state.quiz_generated = False
+        
+    if 'quiz_or_flashcard' not in st.session_state:
+        st.session_state.quiz_or_flashcard = None
+
+    st.title("Teague Coughlin Study Tool")
     
-    topic = st.text_input("Enter the topic you want to create a quiz about:")
-    
+    topic = st.text_input("Enter the topic or notes you want to study:")
+
+    let_quizon_decide = st.checkbox("Let QuizOn Decide")
+
+    if not let_quizon_decide:
+        st.markdown(
+            """
+            <style>
+                /* Custom styles for the slider */
+                .stSlider > div {
+                    margin-top: -30px;  /* Adjust this value as needed */
+                    margin-left: -20px;  /* Adjust this value as needed */
+                }
+                .stMarkdown {
+                    position: relative;
+                    top: 8px; /* Adjust this value as needed */
+                    left: 0px; /* Adjust this value as needed */
+                    font-size: 0.8em; /* Optional: Adjust the font size */
+                }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+
     st.markdown(
             """
             <style>
@@ -134,7 +209,11 @@ def main_screen():
 
     if generate_quiz and topic:
         st.session_state.topic = topic
-        st.session_state.number_of_questions = number_of_questions
+        if not let_quizon_decide:
+            st.session_state.number_of_questions = number_of_questions
+        else:
+            st.session_state.number_of_questions = "as many as needed"
+        
         with st.empty():
             for percent_complete in range(101):
                 # loading bar logic
@@ -146,18 +225,59 @@ def main_screen():
         
         console.text("Finalizing...")
         quiz_generated = generate_questions_from_topic(topic, st.session_state.number_of_questions)  # Pass the number of questions
+        
         if quiz_generated:
+            st.session_state.quiz_generated = True
             st.progress(1.0)
             console.text("Quiz successfully generated. Starting quiz...")
             st.experimental_rerun()
         else:
             console.text("Failed to generate quiz. Please try again.")
-
+            
+        if st.session_state.quiz_generated:
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("Start Quiz"):
+                    st.session_state.quiz_or_flashcard = "quiz"
+            with col2:
+                if st.button("Create Flashcards"):
+                    flashcards_generated = generate_flashcards_from_topic(topic, st.session_state.number_of_questions)  # Adjust the number as needed
+                    if flashcards_generated:
+                        st.session_state.quiz_or_flashcard = "flashcard"
+                    else:
+                        st.error("Failed to generate flashcards. Please try again.")"):
+                    
+            st.session_state.quiz_or_flashcard = "flashcard"
+            
+            if st.session_state.quiz_or_flashcard == "quiz":
+                if 'questions' in st.session_state and st.session_state.questions:
+                    if st.session_state.current_question_index < len(st.session_state.questions):
+                        display_current_question()
+                    else:
+                        handle_quiz_end()
+            elif st.session_state.quiz_or_flashcard == "flashcard":
+                display_flashcards()
+        
     if 'questions' in st.session_state and st.session_state.questions:
         if st.session_state.current_question_index < len(st.session_state.questions):
             display_current_question()
         else:
             handle_quiz_end()
+
+def display_flashcards():
+    if 'flashcards' in st.session_state and st.session_state.flashcards:
+        current_flashcard = st.session_state.flashcards[st.session_state.current_flashcard_index]
+        concept, definition = current_flashcard
+
+        if st.button(concept, key=f"flashcard{st.session_state.current_flashcard_index}"):
+            st.info(definition)
+
+        if st.button("Next", key="next_flashcard"):
+            if st.session_state.current_flashcard_index < len(st.session_state.flashcards) - 1:
+                st.session_state.current_flashcard_index += 1
+            else:
+                st.session_state.current_flashcard_index = 0
+            st.experimental_rerun()
             
 def display_current_question():
     question_tuple = st.session_state.questions[st.session_state.current_question_index]
