@@ -81,7 +81,6 @@ def generate_questions_from_topic(topic, number_of_questions_api, number_of_ques
     for percent_complete in range(100):
         time.sleep(calculate_delay(percent_complete, number_of_questions_loading))
         my_bar.progress(percent_complete + 1)
-    st.write("Progress bar completed.")  # Debug log
 
     with st.spinner('Formatting your quiz...'):
         try:
@@ -106,29 +105,24 @@ def generate_questions_from_topic(topic, number_of_questions_api, number_of_ques
                 ]
             )
             
-            st.write("API call successful.")  # debug log
-            content = response.choices[0].message.content.strip()
-            st.write(f"API Response: {content}")
-
+           content = response.choices[0].message.content.strip()
             if not content.startswith("[") or not content.endswith("]"):
                 content = "[" + content.replace("]\n\n[", ", ") + "]"
 
             questions = parse_questions(content)
-
             if questions:
                 random.shuffle(questions)
                 st.session_state.questions = questions
                 st.session_state.current_question_index = 0
                 st.session_state.correct_answers = 0
-                return True
+                st.session_state.display_quiz = True  # Set flag to display quiz
             else:
                 st.error("Could not parse the API response into quiz questions.")
                 return False
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
-            st.write(f"Exception details: {str(e)}")  # Debug log
             return False
-
+        
 if 'questions' not in st.session_state:
     st.session_state.questions = []
     st.session_state.correct_answers = 0
@@ -184,10 +178,19 @@ def main_screen():
     with col2:
         generate_flashcards = st.button("Generate Flashcards")
 
-    if generate_quiz:
-        st.session_state.quiz_or_flashcard = "quiz"
-    if generate_flashcards:
-        st.session_state.quiz_or_flashcard = "flashcard"
+    if generate_quiz or generate_flashcards:
+        st.session_state.quiz_or_flashcard = "quiz" if generate_quiz else "flashcard"
+        st.session_state.number_of_questions = st.number_input("Number of Questions", min_value=1, max_value=40, value=5)
+        st.session_state.let_quizon_decide = st.checkbox("Let QuizOn Decide")
+        if st.button("Generate"):
+            topic = capitalize_topic(topic)
+            handle_generation(topic, st.session_state.quiz_or_flashcard == "quiz")
+
+    if st.session_state.get('display_quiz', False):
+        display_current_question()  # Display the quiz
+
+    elif st.session_state.get('display_flashcards', False):
+        display_flashcards()  # Display the flashcards
         
     if st.session_state.get('display_quiz', False):
         display_current_question()  # Display the quiz
