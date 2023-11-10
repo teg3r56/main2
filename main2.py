@@ -143,142 +143,34 @@ def main_screen():
     
     topic = st.text_input("Enter the topic or notes you want to study:")
 
-    let_quizon_decide = st.checkbox("Let QuizOn Decide")
-
-    if not let_quizon_decide:
-        st.markdown(
-            """
-            <style>
-                /* Custom styles for the slider */
-                .stSlider > div {
-                    margin-top: -30px;  /* Adjust this value as needed */
-                    margin-left: -20px;  /* Adjust this value as needed */
-                }
-                .stMarkdown {
-                    position: relative;
-                    top: 8px; /* Adjust this value as needed */
-                    left: 0px; /* Adjust this value as needed */
-                    font-size: 0.8em; /* Optional: Adjust the font size */
-                }
-            </style>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    st.markdown(
-            """
-            <style>
-                /* Target the slider's container div and adjust its position */
-                .stSlider > div {
-                    margin-top: -30px;  /* Adjust this value as needed */
-                    margin-left: -20px;  /* Adjust this value as needed */
-                }
-            </style>
-            """,
-            unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        """
-        <style>
-        /* Target the caption and adjust its position */
-        .stMarkdown {
-            position: relative;
-            top: 8px; /* Adjust this value as needed */
-            left: 0px; /* Adjust this value as needed */
-            font-size: 0.8em; /* Optional: Adjust the font size */
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-    
-    # columns
-    col1, col2, col3, col4, col5 = st.columns([2, 1, 1, 1, 2])
-
+    col1, col2 = st.columns(2)
     with col1:
         generate_quiz = st.button("Generate Quiz")
-        
     with col2:
-        if generate_quiz:
-            if st.button("Start Quiz"):
-                st.session_state.quiz_or_flashcard = "quiz"
+        generate_flashcards = st.button("Generate Flashcards")
 
-    with col3:
-        if generate_quiz:
-            number_of_questions = st.slider("", 1, 40, 5, key='num_questions')
+    if generate_quiz or generate_flashcards:
+        number_of_questions = st.number_input("Number of Questions", min_value=1, max_value=40, value=5)
+        let_quizon_decide = st.checkbox("Let QuizOn Decide", value=False)
+        generate = st.button("Generate")
 
-    with col4:
-        if generate_quiz:
-            if st.button("Create Flashcards"):
-                flashcards_generated = generate_flashcards_from_topic(topic, st.session_state.number_of_questions)
-                if flashcards_generated:
-                    st.session_state.quiz_or_flashcard = "flashcard"
+        if generate and topic:
+            if generate_quiz:
+                # This function should handle the quiz generation process and return True/False
+                quiz_generated = generate_questions_from_topic(topic, number_of_questions if not let_quizon_decide else 'as many as needed')
+                if quiz_generated:
+                    # This function should display the quiz
+                    display_current_question()
                 else:
-                    st.error("Failed to generate flashcards. Please try again.")
-
-    with col5:
-        if generate_quiz:
-            st.caption("Adjust the number of questions for the quiz")
-    
-    console = st.empty()
-
-    if generate_quiz and topic:
-        st.session_state.topic = topic
-        if not let_quizon_decide:
-            st.session_state.number_of_questions = number_of_questions
-        else:
-            st.session_state.number_of_questions = "as many as needed"
-        
-        with st.empty():
-            for percent_complete in range(101):
-                # loading bar logic
-                time_delay = calculate_delay(percent_complete, st.session_state.number_of_questions)
-                progress = percent_complete / 100.0
-                st.progress(progress)
-                console.text(f"Loading... {percent_complete}%")
-                time.sleep(time_delay)
-        
-        console.text("Finalizing...")
-        quiz_generated = generate_questions_from_topic(topic, st.session_state.number_of_questions)  # Pass the number of questions
-        
-        if quiz_generated:
-            st.session_state.quiz_generated = True
-            st.progress(1.0)
-            console.text("Quiz successfully generated. Starting quiz...")
-            st.experimental_rerun()
-        else:
-            console.text("Failed to generate quiz. Please try again.")
-            
-        if st.session_state.quiz_generated:
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("Start Quiz"):
-                    st.session_state.quiz_or_flashcard = "quiz"
-            with col2:
-                if st.button("Create Flashcards"):
-                    flashcards_generated = generate_flashcards_from_topic(topic, st.session_state.number_of_questions)  # Adjust the number as needed
-                    if flashcards_generated:
-                        st.session_state.quiz_or_flashcard = "flashcard"
-                    else:
-                        st.error("Failed to generate flashcards. Please try again.")
-                    
-            st.session_state.quiz_or_flashcard = "flashcard"
-            
-            if st.session_state.quiz_or_flashcard == "quiz":
-                if 'questions' in st.session_state and st.session_state.questions:
-                    if st.session_state.current_question_index < len(st.session_state.questions):
-                        display_current_question()
-                    else:
-                        handle_quiz_end()
-            elif st.session_state.quiz_or_flashcard == "flashcard":
-                display_flashcards()
-        
-    if 'questions' in st.session_state and st.session_state.questions:
-        if st.session_state.current_question_index < len(st.session_state.questions):
-            display_current_question()
-        else:
-            handle_quiz_end()
+                    st.error("Failed to generate quiz.")
+            elif generate_flashcards:
+                # This function should handle the flashcard generation process and return True/False
+                flashcards_generated = generate_flashcards_from_topic(topic, number_of_questions if not let_quizon_decide else 'as many as needed')
+                if flashcards_generated:
+                    # This function should display the flashcards
+                    display_flashcards()
+                else:
+                    st.error("Failed to generate flashcards.")
 
 def display_flashcards():
     if 'flashcards' in st.session_state and st.session_state.flashcards:
