@@ -145,9 +145,9 @@ def main_screen():
 
     col1, col2 = st.columns(2)
     with col1:
-        generate_quiz = st.button("Generate Quiz")
+        generate_quiz = st.button("Generate Quiz", key="generate_quiz")
     with col2:
-        generate_flashcards = st.button("Generate Flashcards")
+        generate_flashcards = st.button("Generate Flashcards", key="generate_flashcards")
 
     if generate_quiz or generate_flashcards:
         number_of_questions = st.number_input("Number of Questions", min_value=1, max_value=40, value=5)
