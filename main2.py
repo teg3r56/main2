@@ -105,7 +105,7 @@ def generate_questions_from_topic(topic, number_of_questions_api, number_of_ques
                 ]
             )
             
-           content = response.choices[0].message.content.strip()
+            content = response.choices[0].message.content.strip()
             if not content.startswith("[") or not content.endswith("]"):
                 content = "[" + content.replace("]\n\n[", ", ") + "]"
 
