@@ -76,12 +76,13 @@ def parse_flashcards(content):
         st.error(f"Error while parsing content: {e}")
         return None
         
-def generate_questions_from_topic(topic, number_of_questions):
+def generate_questions_from_topic(topic, number_of_questions_api, number_of_questions_loading):
     my_bar = st.progress(0)
     for percent_complete in range(100):
-        time.sleep(calculate_delay(percent_complete, number_of_questions))
+        time.sleep(calculate_delay(percent_complete, number_of_questions_loading))
         my_bar.progress(percent_complete + 1)
     with st.spinner('Formatting your quiz...'):
+
         try:
             response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
@@ -215,25 +216,22 @@ def handle_generation(topic, generate_quiz):
     let_quizon_decide = st.session_state['let_quizon_decide']
     st.session_state.generation_started = True  
 
-    if let_quizon_decide:
-        question_count = 'as many as needed'
-    else:
-        question_count = number_of_questions
+    question_count_for_api = 'as many as needed' if let_quizon_decide else number_of_questions
+    question_count_for_loading_bar = 10 if let_quizon_decide else number_of_questions
 
     if generate_quiz:
-        quiz_generated = generate_questions_from_topic(topic, question_count)
+        quiz_generated = generate_questions_from_topic(topic, question_count_for_api, question_count_for_loading_bar)
         st.session_state.generation_started = False  # reset gen status
         if not quiz_generated:
             st.error("Failed to generate quiz.")
             return False
     else:
-        flashcards_generated = generate_flashcards_from_topic(topic, question_count)
+        flashcards_generated = generate_flashcards_from_topic(topic, question_count_for_api, question_count_for_loading_bar)
         st.session_state.generation_started = False 
         if not flashcards_generated:
             st.error("Failed to generate flashcards.")
             return False
     return True
-
 
 def display_flashcards():
     if 'flashcards' in st.session_state and st.session_state.flashcards:
