@@ -188,7 +188,14 @@ def main_screen():
         st.session_state.quiz_or_flashcard = "quiz"
     if generate_flashcards:
         st.session_state.quiz_or_flashcard = "flashcard"
+        
+    if st.session_state.get('display_quiz', False):
+        display_current_question()  # Display the quiz
+        st.session_state['display_quiz'] = False  # Reset the flag
 
+    elif st.session_state.get('display_flashcards', False):
+        display_flashcards()  # Display the flashcards
+        st.session_state['display_flashcards'] = False  # Reset the flag
     if st.session_state.quiz_or_flashcard is not None:
         st.session_state.number_of_questions = st.number_input("Number of Questions", min_value=1, max_value=40, value=5)
         st.session_state.let_quizon_decide = st.checkbox("Let QuizOn Decide")
@@ -214,11 +221,14 @@ def initialize_state_variables():
         st.session_state['number_of_questions'] = 5
     if 'let_quizon_decide' not in st.session_state:
         st.session_state['let_quizon_decide'] = False
+    if 'display_quiz' not in st.session_state:
+        st.session_state['display_quiz'] = False
+    if 'display_flashcards' not in st.session_state:
+        st.session_state['display_flashcards'] = False
 
 def handle_generation(topic, generate_quiz):
     number_of_questions = st.session_state['number_of_questions']
     let_quizon_decide = st.session_state['let_quizon_decide']
-    st.session_state.generation_started = True
 
     question_count_for_api = 'as many as needed' if let_quizon_decide else number_of_questions
     question_count_for_loading_bar = 10 if let_quizon_decide else number_of_questions
@@ -228,14 +238,15 @@ def handle_generation(topic, generate_quiz):
         if not quiz_generated:
             st.error("Failed to generate quiz.")
             return False
+        else:
+            st.session_state['display_quiz'] = True  # Set a flag to display the quiz
     else:
         flashcards_generated = generate_flashcards_from_topic(topic, question_count_for_api, question_count_for_loading_bar)
         if not flashcards_generated:
             st.error("Failed to generate flashcards.")
             return False
-
-    st.session_state.generation_started = False  
-    st.experimental_rerun()  
+        else:
+            st.session_state['display_flashcards'] = True  # Set a flag to display flashcards
 
 
 def display_flashcards():
