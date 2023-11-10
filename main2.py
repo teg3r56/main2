@@ -138,16 +138,27 @@ def main_screen():
         
     if 'quiz_or_flashcard' not in st.session_state:
         st.session_state.quiz_or_flashcard = None
-
+        
+    st.markdown("""
+    <style>
+    .full-width-button {
+        display: block;
+        width: 100%;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
     st.title("Teague Coughlin Study Tool")
     
     topic = st.text_input("Enter the topic or notes you want to study:")
 
-    col1, col2 = st.columns([4, 4])  # width
+    col1, col2 = st.columns(2)
     with col1:
-        generate_quiz = st.button("Generate Quiz", key="generate_quiz")
+        st.button("Generate Quiz", key="generate_quiz", help="Click to generate a quiz based on the topic provided.", 
+                  on_click=None, args=None, kwargs=None, disabled=False, class_name='full-width-button')
     with col2:
-        generate_flashcards = st.button("Generate Flashcards", key="generate_flashcards")
+        st.button("Generate Flashcards", key="generate_flashcards", help="Click to generate flashcards based on the topic provided.",
+                  on_click=None, args=None, kwargs=None, disabled=False, class_name='full-width-button')
 
     if generate_quiz or generate_flashcards:
         number_of_questions = st.number_input("Number of Questions", min_value=1, max_value=40, value=5)
