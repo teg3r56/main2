@@ -144,7 +144,12 @@ def main_screen():
 
     if 'let_quizon_decide' not in st.session_state:
         st.session_state.let_quizon_decide = False
-        
+
+    if 'ready_to_generate' not in st.session_state:
+        st.session_state.ready_to_generate = False
+
+    initialize_state_variables()
+
     st.markdown("""
     <style>
     div.stButton > button:first-child {
@@ -153,50 +158,39 @@ def main_screen():
     </style>""", unsafe_allow_html=True)
     
     st.title("Teague Coughlin Study Tool")
+
     topic = st.text_input("Enter the topic or notes you want to study:")
+
     col1, col2 = st.columns(2)
     
     with col1:
-        if st.button("Generate Quiz"):
-            st.session_state.quiz_or_flashcard = "quiz"
+        generate_quiz = st.button("Generate Quiz")
             
     with col2:
-        if st.button("Generate Flashcards"):
-            st.session_state.quiz_or_flashcard = "flashcard"
+        generate_flashcards = st.button("Generate Flashcards")
 
-    # Handle the input for number of questions and the checkbox for letting QuizOn decide
+    if generate_quiz:
+        st.session_state.quiz_or_flashcard = "quiz"
+    if generate_flashcards:
+        st.session_state.quiz_or_flashcard = "flashcard"
+
     if st.session_state.quiz_or_flashcard is not None:
         st.session_state.number_of_questions = st.number_input("Number of Questions", min_value=1, max_value=40, value=5)
         st.session_state.let_quizon_decide = st.checkbox("Let QuizOn Decide")
 
-    # Generate button and logic
-    if st.button("Generate"):
-        if topic:
-            if st.session_state.quiz_or_flashcard == "quiz":
-                quiz_generated = generate_questions_from_topic(
-                    topic, 
-                    st.session_state.number_of_questions if not st.session_state.let_quizon_decide else 'as many as needed'
-                )
-                if quiz_generated:
-                    display_current_question()
-                else:
-                    st.error("Failed to generate quiz.")
-            elif st.session_state.quiz_or_flashcard == "flashcard":
-                flashcards_generated = generate_flashcards_from_topic(
-                    topic, 
-                    st.session_state.number_of_questions if not st.session_state.let_quizon_decide else 'as many as needed'
-                )
-                if flashcards_generated:
-                    display_flashcards()
-                else:
-                    st.error("Failed to generate flashcards.")
+    if st.session_state.quiz_or_flashcard and topic and st.button("Generate"):
+        handle_generation(topic, st.session_state.quiz_or_flashcard == "quiz")
+        st.session_state.ready_to_generate = False  # Reset the state
+        st.session_state.quiz_or_flashcard = None   # Reset the choice
+        st.experimental_rerun()  # Rerun the app to go back to the initial state
 
-        # If generation has started, render the quiz or flashcards
-        if st.session_state.get('generation_started', False):
-            if generate_quiz:
-                display_current_question()  # Display the quiz
-            elif generate_flashcards:
-                display_flashcards()  # Display the flashcards
+    if st.session_state.generation_started:
+        # This should display the loading bar and the quiz/flashcards after generation
+        if st.session_state.quiz_or_flashcard == "quiz":
+            display_current_question()  # Display the quiz
+        elif st.session_state.quiz_or_flashcard == "flashcard":
+            display_flashcards()  # Display the flashcards
+        st.session_state.generation_started = False
 
 def initialize_state_variables():
     if 'generation_started' not in st.session_state:
