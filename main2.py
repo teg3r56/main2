@@ -132,7 +132,21 @@ if 'questions' not in st.session_state:
 
 if 'quiz_history' not in st.session_state:
     st.session_state.quiz_history = []
-
+    
+def initialize_state_variables():
+    if 'generation_started' not in st.session_state:
+        st.session_state['generation_started'] = False
+    if 'number_of_questions' not in st.session_state:
+        st.session_state['number_of_questions'] = 5
+    if 'let_quizon_decide' not in st.session_state:
+        st.session_state['let_quizon_decide'] = False
+    if 'display_quiz' not in st.session_state:
+        st.session_state['display_quiz'] = False
+    if 'display_flashcards' not in st.session_state:
+        st.session_state['display_flashcards'] = False
+    if 'quiz_or_flashcard' not in st.session_state:
+        st.session_state['quiz_or_flashcard'] = None
+        
 # Main screen function
 def main_screen():
     initialize_state_variables()
@@ -184,19 +198,6 @@ def main_screen():
         st.session_state.ready_to_generate = False
         st.session_state.quiz_or_flashcard = None
         st.experimental_rerun()
-
-# Initialize state variables function
-def initialize_state_variables():
-    if 'generation_started' not in st.session_state:
-        st.session_state['generation_started'] = False
-    if 'number_of_questions' not in st.session_state:
-        st.session_state['number_of_questions'] = 5
-    if 'let_quizon_decide' not in st.session_state:
-        st.session_state['let_quizon_decide'] = False
-    if 'display_quiz' not in st.session_state:
-        st.session_state['display_quiz'] = False
-    if 'display_flashcards' not in st.session_state:
-        st.session_state['display_flashcards'] = False
 
 # Handle generation function
 def handle_generation(topic, generate_quiz, number_of_items):
