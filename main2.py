@@ -146,6 +146,8 @@ def initialize_state_variables():
         st.session_state['display_flashcards'] = False
     if 'quiz_or_flashcard' not in st.session_state:
         st.session_state['quiz_or_flashcard'] = None
+    if 'answer_submitted' not in st.session_state:
+        st.session_state['answer_submitted'] = False
         
 # Main screen function
 def main_screen():
@@ -171,10 +173,11 @@ def main_screen():
             st.session_state.quiz_or_flashcard = "flashcard"
 
     if st.session_state.get('quiz_or_flashcard'):
-        st.session_state.let_quizon_decide = st.checkbox("Let QuizOn Decide", key='quiz_decide_checkbox')
-
-        if not st.session_state.let_quizon_decide:
-            st.session_state.number_of_questions = st.number_input("Number of Questions", min_value=1, max_value=40, value=5, key='num_questions_input')
+        col3, col4 = st.columns([1, 3])
+        with col3:
+            st.session_state.let_quizon_decide = st.checkbox("Let QuizOn Decide", key='quiz_decide_checkbox')
+        with col4:
+            st.session_state.number_of_questions = st.number_input("Number of Questions", min_value=1, max_value=40, value=5, key='num_questions_input', disabled=st.session_state.let_quizon_decide)
 
         if st.button("Generate", key='generate_button'):
             topic = capitalize_topic(topic)
@@ -235,13 +238,10 @@ def display_current_question():
     
     disabled = st.session_state.answer_submitted
     
-    option = st.radio("Choose the correct answer:", options, key=f"option{st.session_state.current_question_index}", disabled=disabled)
+    if not disabled:
+        option = st.radio("Choose the correct answer:", options, key=f"option{st.session_state.current_question_index}")
+        submit_placeholder = st.empty()
 
-    # manage button state
-    submit_placeholder = st.empty()
-    next_placeholder = st.empty()
-
-    if not st.session_state.answer_submitted:
         if submit_placeholder.button("Submit Answer"):
             check_answer(option, options, correct_answer_index, explanation)
             submit_placeholder.empty()
