@@ -163,13 +163,14 @@ def main_screen():
     col1, col2 = st.columns(2)
 
     with col1:
-        generate_quiz = st.button("Generate Quiz")
+        if st.button("Generate Quiz"):
+            st.session_state.quiz_or_flashcard = "quiz"
 
     with col2:
-        generate_flashcards = st.button("Generate Flashcards")
+        if st.button("Generate Flashcards"):
+            st.session_state.quiz_or_flashcard = "flashcard"
 
-    if generate_quiz or generate_flashcards:
-        st.session_state.quiz_or_flashcard = "quiz" if generate_quiz else "flashcard"
+    if st.session_state.get('quiz_or_flashcard'):
         st.session_state.let_quizon_decide = st.checkbox("Let QuizOn Decide", key='quiz_decide_checkbox')
 
         if not st.session_state.let_quizon_decide:
@@ -185,7 +186,7 @@ def main_screen():
 
     elif st.session_state.get('display_flashcards', False):
         display_flashcards()
-
+        
     if st.session_state.generation_started:
         if st.session_state.quiz_or_flashcard == "quiz":
             display_current_question()
