@@ -341,9 +341,11 @@ def calculate_delay(percent_complete, number_of_items):
     base_time = 0.02  # base time for 1 item
     incremental_time = 0.025  # additional time per item
 
+    if isinstance(number_of_items, str) and number_of_items == "As many as needed":
+        number_of_items = 10  
+
     time_delay = base_time + ((number_of_items - 1) * incremental_time)
 
-    # Exponential growth for later percentages
     if percent_complete > 50:
         time_delay *= (1 + (percent_complete - 50) / 50)
     if percent_complete > 85:
