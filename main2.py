@@ -143,7 +143,7 @@ def main_screen():
     
     topic = st.text_input("Enter the topic or notes you want to study:")
 
-    col1, col2 = st.columns([1, 1])  # width
+    col1, col2 = st.columns([4, 4])  # width
     with col1:
         generate_quiz = st.button("Generate Quiz", key="generate_quiz")
     with col2:
