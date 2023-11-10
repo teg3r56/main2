@@ -22,15 +22,14 @@ def parse_questions(content):
     except Exception as e:
         st.error(f"Error while parsing content: {e}")
         return None
-        
-def generate_flashcards_from_topic(topic, number_of_flashcards_api, number_of_flashcards_loading):
+
+def generate_flashcards_from_topic(topic, number_of_flashcards):
     my_bar = st.progress(0)
     for percent_complete in range(100):
-        time.sleep(calculate_delay(percent_complete, number_of_flashcards_loading))
+        time.sleep(calculate_delay(percent_complete, number_of_flashcards))
         my_bar.progress(percent_complete + 1)
 
     with st.spinner('Creating your flashcards...'):
-        
         try:
             response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
@@ -75,11 +74,11 @@ def parse_flashcards(content):
     except Exception as e:
         st.error(f"Error while parsing content: {e}")
         return None
-        
-def generate_questions_from_topic(topic, number_of_questions_api, number_of_questions_loading):
+
+def generate_questions_from_topic(topic, number_of_questions):
     my_bar = st.progress(0)
     for percent_complete in range(100):
-        time.sleep(calculate_delay(percent_complete, number_of_questions_loading))
+        time.sleep(calculate_delay(percent_complete, number_of_questions))
         my_bar.progress(percent_complete + 1)
 
     with st.spinner('Formatting your quiz...'):
@@ -107,7 +106,7 @@ def generate_questions_from_topic(topic, number_of_questions_api, number_of_ques
             
             content = response.choices[0].message.content.strip()
             if not content.startswith("[") or not content.endswith("]"):
-                content = "[" + content.replace("]\n\n[", ", ") + "]"
+                content = "[" + content + "]"
 
             questions = parse_questions(content)
             if questions:
@@ -115,14 +114,16 @@ def generate_questions_from_topic(topic, number_of_questions_api, number_of_ques
                 st.session_state.questions = questions
                 st.session_state.current_question_index = 0
                 st.session_state.correct_answers = 0
-                st.session_state.display_quiz = True  # Set flag to display quiz
+                st.session_state.display_quiz = True
+                return True
             else:
                 st.error("Could not parse the API response into quiz questions.")
                 return False
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
             return False
-        
+
+# Initialize state variables
 if 'questions' not in st.session_state:
     st.session_state.questions = []
     st.session_state.correct_answers = 0
@@ -131,32 +132,9 @@ if 'questions' not in st.session_state:
 
 if 'quiz_history' not in st.session_state:
     st.session_state.quiz_history = []
-    
+
+# Main screen function
 def main_screen():
-    if 'quiz_history' not in st.session_state:
-        st.session_state.quiz_history = []
-        
-    if 'show_next' not in st.session_state:
-        st.session_state.show_next = False
-        
-    if 'answer_submitted' not in st.session_state:
-        st.session_state.answer_submitted = False
-
-    if 'quiz_generated' not in st.session_state:
-        st.session_state.quiz_generated = False
-        
-    if 'quiz_or_flashcard' not in st.session_state:
-        st.session_state.quiz_or_flashcard = None
-
-    if 'number_of_questions' not in st.session_state:
-        st.session_state.number_of_questions = 5
-
-    if 'let_quizon_decide' not in st.session_state:
-        st.session_state.let_quizon_decide = False
-
-    if 'ready_to_generate' not in st.session_state:
-        st.session_state.ready_to_generate = False
-
     initialize_state_variables()
 
     st.markdown("""
@@ -165,23 +143,19 @@ def main_screen():
         width: 100%;
     }
     </style>""", unsafe_allow_html=True)
-    
+
     st.title("Teague Coughlin Study Tool")
-
     topic = st.text_input("Enter the topic or notes you want to study:")
-
     col1, col2 = st.columns(2)
-    
+
     with col1:
         generate_quiz = st.button("Generate Quiz")
-            
+
     with col2:
         generate_flashcards = st.button("Generate Flashcards")
 
     if generate_quiz or generate_flashcards:
         st.session_state.quiz_or_flashcard = "quiz" if generate_quiz else "flashcard"
-        
-        # Moved these widgets outside of the if block to avoid duplicate widget IDs
         st.session_state.number_of_questions = st.number_input("Number of Questions", min_value=1, max_value=40, value=5, key='num_questions_input')
         st.session_state.let_quizon_decide = st.checkbox("Let QuizOn Decide", key='quiz_decide_checkbox')
 
@@ -190,10 +164,10 @@ def main_screen():
             handle_generation(topic, st.session_state.quiz_or_flashcard == "quiz")
 
     if st.session_state.get('display_quiz', False):
-        display_current_question()  # Display the quiz
+        display_current_question()
 
     elif st.session_state.get('display_flashcards', False):
-        display_flashcards()  # Display the flashcards
+        display_flashcards()
 
     if st.session_state.generation_started:
         if st.session_state.quiz_or_flashcard == "quiz":
@@ -201,32 +175,14 @@ def main_screen():
         elif st.session_state.quiz_or_flashcard == "flashcard":
             display_flashcards()
         st.session_state.generation_started = False
-        
-    if st.session_state.get('display_quiz', False):
-        display_current_question()  # Display the quiz
-        st.session_state['display_quiz'] = False  # Reset the flag
-
-    elif st.session_state.get('display_flashcards', False):
-        display_flashcards()  # Display the flashcards
-        st.session_state['display_flashcards'] = False  # Reset the flag
-    if st.session_state.quiz_or_flashcard is not None:
-        st.session_state.number_of_questions = st.number_input("Number of Questions", min_value=1, max_value=40, value=5)
-        st.session_state.let_quizon_decide = st.checkbox("Let QuizOn Decide")
 
     if st.session_state.quiz_or_flashcard and topic and st.button("Generate"):
         handle_generation(topic, st.session_state.quiz_or_flashcard == "quiz")
-        st.session_state.ready_to_generate = False  # Reset the state
-        st.session_state.quiz_or_flashcard = None   # Reset the choice
-        st.experimental_rerun()  # Rerun the app to go back to the initial state
+        st.session_state.ready_to_generate = False
+        st.session_state.quiz_or_flashcard = None
+        st.experimental_rerun()
 
-    if st.session_state.generation_started:
-        # This should display the loading bar and the quiz/flashcards after generation
-        if st.session_state.quiz_or_flashcard == "quiz":
-            display_current_question()  # Display the quiz
-        elif st.session_state.quiz_or_flashcard == "flashcard":
-            display_flashcards()  # Display the flashcards
-        st.session_state.generation_started = False
-
+# Initialize state variables function
 def initialize_state_variables():
     if 'generation_started' not in st.session_state:
         st.session_state['generation_started'] = False
@@ -239,20 +195,17 @@ def initialize_state_variables():
     if 'display_flashcards' not in st.session_state:
         st.session_state['display_flashcards'] = False
 
+# Handle generation function
 def handle_generation(topic, generate_quiz):
     number_of_items = st.session_state['number_of_questions']
     if generate_quiz:
         quiz_generated = generate_questions_from_topic(topic, number_of_items)
-        if quiz_generated:
-            st.session_state['display_quiz'] = True
-        else:
+        if not quiz_generated:
             st.error("Failed to generate quiz.")
             return False
     else:
         flashcards_generated = generate_flashcards_from_topic(topic, number_of_items)
-        if flashcards_generated:
-            st.session_state['display_flashcards'] = True
-        else:
+        if not flashcards_generated:
             st.error("Failed to generate flashcards.")
             return False
 
