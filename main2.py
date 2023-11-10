@@ -215,19 +215,25 @@ def handle_generation(topic, generate_quiz):
     let_quizon_decide = st.session_state['let_quizon_decide']
     st.session_state.generation_started = True  
 
+    if let_quizon_decide:
+        question_count = 'as many as needed'
+    else:
+        question_count = number_of_questions
+
     if generate_quiz:
-        quiz_generated = generate_questions_from_topic(topic, number_of_questions if not let_quizon_decide else 'as many as needed')
+        quiz_generated = generate_questions_from_topic(topic, question_count)
         st.session_state.generation_started = False  # reset gen status
         if not quiz_generated:
             st.error("Failed to generate quiz.")
             return False
     else:
-        flashcards_generated = generate_flashcards_from_topic(topic, number_of_questions if not let_quizon_decide else 'as many as needed')
+        flashcards_generated = generate_flashcards_from_topic(topic, question_count)
         st.session_state.generation_started = False 
         if not flashcards_generated:
             st.error("Failed to generate flashcards.")
             return False
     return True
+
 
 def display_flashcards():
     if 'flashcards' in st.session_state and st.session_state.flashcards:
