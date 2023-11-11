@@ -165,6 +165,7 @@ def main_screen():
     .checkbox-style {
         position: relative;
         left: 20px; /* Adjust as necessary */
+        down: 20px;
     }
     </style>""", unsafe_allow_html=True)
     
