@@ -162,12 +162,12 @@ def main_screen():
 
     st.markdown("""
     <style>
-    .checkbox-style {
-        position: relative;
-        left: 20px; /* Adjust as necessary */
-        top: 50px;
+    /* Target the checkbox */
+    .stCheckbox > div:first-child > label {
+        margin-bottom: 50px; /* Increase space below the checkbox */
     }
-    </style>""", unsafe_allow_html=True)
+    </style>
+    """, unsafe_allow_html=True)
     
     st.title("Teague Coughlin Study Tool")
     topic = st.text_input("Enter the topic or notes you want to study:")
@@ -180,7 +180,7 @@ def main_screen():
         number_of_questions = st.slider("", 1, 40, 5, key='num_questions')
 
     with col3:
-        st.checkbox("Let QuizOn Decide", key='let_quizon_decide', css_class='checkbox-style')
+        st.checkbox("Let QuizOn Decide", key='let_quizon_decide')
         st.caption("Adjust the number of questions for the quiz")
         
     if st.session_state.get('quiz_or_flashcard'):
