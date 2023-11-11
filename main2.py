@@ -165,7 +165,7 @@ def main_screen():
     .checkbox-style {
         position: relative;
         left: 20px; /* Adjust as necessary */
-        top: 20px;
+        top: 50px;
     }
     </style>""", unsafe_allow_html=True)
     
@@ -257,7 +257,6 @@ def display_current_question():
             check_answer(option, options, correct_answer_index, explanation)
             submit_placeholder.empty()
 
-    # Check if we are on the last question and change the button text accordingly
     if st.session_state.show_next:
         button_label = "Review" if st.session_state.current_question_index == len(st.session_state.questions) - 1 else "Next Question"
         if next_placeholder.button(button_label):
@@ -296,7 +295,7 @@ def get_letter_grade(correct, total):
     elif percentage >= 60: return 'D'
     else: return 'F'
         
-# Global grade color dictionary
+# global grade color
 grade_color = {
     'A': '#4CAF50',  # Green
     'B': '#90EE90',  # Light Green
