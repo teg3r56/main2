@@ -160,18 +160,28 @@ def main_screen():
     }
     </style>""", unsafe_allow_html=True)
 
+    st.markdown("""
+    <style>
+    .checkbox-style {
+        position: relative;
+        left: 20px; /* Adjust as necessary */
+    }
+    </style>""", unsafe_allow_html=True)
+    
     st.title("Teague Coughlin Study Tool")
     topic = st.text_input("Enter the topic or notes you want to study:")
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns([2, 3, 3])
 
     with col1:
-        if st.button("Generate Quiz"):
-            st.session_state.quiz_or_flashcard = "quiz"
-
+        generate_quiz = st.button("Generate Quiz")
+        
     with col2:
-        if st.button("Generate Flashcards"):
-            st.session_state.quiz_or_flashcard = "flashcard"
+        number_of_questions = st.slider("", 1, 40, 5, key='num_questions')
 
+    with col3:
+        st.checkbox("Let QuizOn Decide", key='let_quizon_decide', css_class='checkbox-style')
+        st.caption("Adjust the number of questions for the quiz")
+        
     if st.session_state.get('quiz_or_flashcard'):
         col3, col4 = st.columns([1, 3])
         with col3:
