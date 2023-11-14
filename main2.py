@@ -8,6 +8,24 @@ from openai import OpenAI
 # Initialize the OpenAI client with your API key
 client = OpenAI(api_key=st.secrets["OPEN_API_KEY"])
 
+def calculate_delay(percent_complete, number_of_items):
+    
+    base_time = 0.02  
+    incremental_time = 0.025  
+
+    time_delay = base_time + ((number_of_items - 1) * incremental_time)
+
+    if percent_complete > 50:
+        time_delay *= (1 + (percent_complete - 50) / 50)
+    if percent_complete > 85:
+        time_delay *= (1 + (percent_complete - 85) / 15)
+    if percent_complete > 95:
+        time_delay *= (1 + (percent_complete - 95) / 5)
+    if percent_complete > 99:
+        time_delay *= (1 + (percent_complete - 99))
+
+    return time_delay
+
 def parse_questions(content):
     try:
         valid_questions = ast.literal_eval(content)
@@ -22,18 +40,13 @@ def parse_questions(content):
     except Exception as e:
         st.error(f"Error while parsing content: {e}")
         return None
-
+        
 def generate_flashcards_from_topic(topic, number_of_flashcards):
-    my_bar = st.progress(0)
-    for percent_complete in range(100):
-        time.sleep(calculate_delay(percent_complete, number_of_flashcards))
-        my_bar.progress(percent_complete + 1)
-
     with st.spinner('Creating your flashcards...'):
         try:
             response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
-                temperature=0.5,
+                temperature=0.1,
                 messages=[
                     {
                         "role": "system",
@@ -75,25 +88,34 @@ def parse_flashcards(content):
         st.error(f"Error while parsing content: {e}")
         return None
 
-def generate_questions_from_topic(topic, number_of_questions):
-    my_bar = st.progress(0)
-    for percent_complete in range(100):
-        time.sleep(calculate_delay(percent_complete, number_of_questions))
-        my_bar.progress(percent_complete + 1)
+def update_progress_bar():
+    progress = 0
+    for _ in range(100):
+        # increasing sleep time as it gets closer to 90%
+        sleep_time = 0.05 * (1 + (progress / 30)) if progress < 90 else 0.05
+        time.sleep(sleep_time)
+        progress += 1
+        st.session_state.progress_bar.progress(min(progress, 100))
 
-    with st.spinner('Formatting your quiz...'):
-        try:
+def generate_questions_from_topic(topic, number_of_items):
+
+    if 'progress_bar' not in st.session_state:
+            st.session_state.progress_bar = st.progress(0)
+
+    update_progress_bar()
+
+    try:
             response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 temperature=0.1,
                 messages=[
                     {
                         "role": "system",
-                        "content": f"Generate a list of multiple-choice questions with answers and explanations on the topic of {topic}. Please provide exactly {number_of_questions} questions. Format the output as a Python list, with each question as a tuple containing the question text, a list of options, the index of the correct option, and an explanation. Surround the entire list with one pair of brackets, without extra brackets around individual tuples."
+                        "content": f"Generate a list of multiple-choice questions with answers and explanations on the topic of {topic}. Please provide exactly {number_of_items} questions. Format the output as a Python list, with each question as a tuple containing the question text, a list of options, the index of the correct option, and an explanation. Surround the entire list with one pair of brackets, without extra brackets around individual tuples."
                     },
                     {
                         "role": "user", 
-                        "content": f"Create multiple-choice questions about {topic} with exactly {number_of_questions} questions. The output should be formatted as:"
+                        "content": f"Create multiple-choice questions about {topic} with exactly {number_of_items} questions. The output should be formatted as:"
                                                         "[('question', ['options', 'options', 'options'], correct_option_index, 'explanation')] "
                                                         "Example: ["
                                                         "('How many valence electrons do elements in the Alkali metal family have?', "
@@ -103,27 +125,33 @@ def generate_questions_from_topic(topic, number_of_questions):
                     }
                 ]
             )
-            
+
             content = response.choices[0].message.content.strip()
+
             if not content.startswith("[") or not content.endswith("]"):
-                content = "[" + content + "]"
+                content = "[" + content.replace("]\n\n[", ", ") + "]"
 
             questions = parse_questions(content)
-            if questions:
-                random.shuffle(questions)
-                st.session_state.questions = questions
-                st.session_state.current_question_index = 0
-                st.session_state.correct_answers = 0
-                st.session_state.display_quiz = True
-                return True
-            else:
-                st.error("Could not parse the API response into quiz questions.")
-                return False
-        except Exception as e:
+
+            with st.spinner('Formatting your quiz...'):
+                if questions:
+                    random.shuffle(questions)
+                    st.session_state.questions = questions
+                    st.session_state.current_question_index = 0
+                    st.session_state.correct_answers = 0
+                    st.session_state.display_quiz = True
+                    st.session_state.progress_bar.progress(100)
+                    return True
+                else:
+                    st.error("Could not parse the API response into quiz questions.")
+                    return False
+    except Exception as e:
             st.error(f"An error occurred: {str(e)}")
             return False
+    finally:
+        st.session_state.progress_bar.empty()
 
-# Initialize state variables
+
 if 'questions' not in st.session_state:
     st.session_state.questions = []
     st.session_state.correct_answers = 0
@@ -132,26 +160,24 @@ if 'questions' not in st.session_state:
 
 if 'quiz_history' not in st.session_state:
     st.session_state.quiz_history = []
-    
-def initialize_state_variables():
-    if 'generation_started' not in st.session_state:
-        st.session_state['generation_started'] = False
-    if 'number_of_questions' not in st.session_state:
-        st.session_state['number_of_questions'] = 5
-    if 'let_quizon_decide' not in st.session_state:
-        st.session_state['let_quizon_decide'] = False
-    if 'display_quiz' not in st.session_state:
-        st.session_state['display_quiz'] = False
-    if 'display_flashcards' not in st.session_state:
-        st.session_state['display_flashcards'] = False
-    if 'quiz_or_flashcard' not in st.session_state:
-        st.session_state['quiz_or_flashcard'] = None
-    if 'answer_submitted' not in st.session_state:
-        st.session_state['answer_submitted'] = False
-        
-# Main screen function
+
 def main_screen():
-    initialize_state_variables()
+    if 'progress_bar_placeholder' not in st.session_state:
+        st.session_state.progress_bar_placeholder = st.empty()
+    if 'quiz_history' not in st.session_state:
+        st.session_state.quiz_history = []
+    if 'show_next' not in st.session_state:
+        st.session_state.show_next = False
+    if 'answer_submitted' not in st.session_state:
+        st.session_state.answer_submitted = False
+    if 'quiz_generated' not in st.session_state:
+        st.session_state.quiz_generated = False
+    if 'quiz_or_flashcard' not in st.session_state:
+        st.session_state.quiz_or_flashcard = None
+
+    st.title("Teague Coughlin Study Tool")
+    
+    topic = st.text_input("Enter the topic or notes you want to study:")
 
     st.markdown("""
     <style>
@@ -160,72 +186,28 @@ def main_screen():
     }
     </style>""", unsafe_allow_html=True)
 
-    st.markdown("""
-    <style>
-    /* Target the checkbox */
-    .stCheckbox > div:first-child > label {
-        margin-bottom: 50px; /* Increase space below the checkbox */
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    st.title("Teague Coughlin Study Tool")
-    topic = st.text_input("Enter the topic or notes you want to study:")
-    col1, col2, col3 = st.columns([2, 3, 3])
-
+    col1, col2 = st.columns(2)
     with col1:
-        generate_quiz = st.button("Generate Quiz")
-        
+        if st.button("Generate a Quiz"):
+            st.session_state.choice = "quiz"
     with col2:
-        number_of_questions = st.slider("", 1, 40, 5, key='num_questions')
+        if st.button("Generate Flashcards"):
+            st.session_state.choice = "flashcard"
 
-    with col3:
-        st.checkbox("Let QuizOn Decide", key='let_quizon_decide')
-        st.caption("Adjust the number of questions for the quiz")
-        
-    if st.session_state.get('quiz_or_flashcard'):
-        col3, col4 = st.columns([1, 3])
-        with col3:
-            st.session_state.let_quizon_decide = st.checkbox("Let QuizOn Decide", key='quiz_decide_checkbox')
-        with col4:
-            st.session_state.number_of_questions = st.number_input("Number of Questions", min_value=1, max_value=40, value=5, key='num_questions_input', disabled=st.session_state.let_quizon_decide)
+    if topic and 'choice' in st.session_state:
+        number_of_items = st.number_input("Number of Questions", min_value=1, max_value=40, value=5)
 
-        if st.button("Generate", key='generate_button'):
-            topic = capitalize_topic(topic)
-            number_of_items = "As many as needed" if st.session_state.let_quizon_decide else st.session_state.number_of_questions
-            handle_generation(topic, st.session_state.quiz_or_flashcard == "quiz", number_of_items)
+        if st.button("Generate"):
+            if st.session_state.choice == "quiz":
+                generate_questions_from_topic(topic, number_of_items)
+            elif st.session_state.choice == "flashcard":
+                generate_flashcards_from_topic(topic, number_of_items)
 
     if st.session_state.get('display_quiz', False):
         display_current_question()
 
-    elif st.session_state.get('display_flashcards', False):
-        display_flashcards()
-        
-    if st.session_state.generation_started:
-        if st.session_state.quiz_or_flashcard == "quiz":
-            display_current_question()
-        elif st.session_state.quiz_or_flashcard == "flashcard":
-            display_flashcards()
-        st.session_state.generation_started = False
-
-    if st.session_state.quiz_or_flashcard and topic and st.button("Generate"):
-        handle_generation(topic, st.session_state.quiz_or_flashcard == "quiz")
-        st.session_state.ready_to_generate = False
-        st.session_state.quiz_or_flashcard = None
-        st.experimental_rerun()
-
-# Handle generation function
-def handle_generation(topic, generate_quiz, number_of_items):
-    if generate_quiz:
-        quiz_generated = generate_questions_from_topic(topic, number_of_items)
-        if not quiz_generated:
-            st.error("Failed to generate quiz.")
-            return False
-    else:
-        flashcards_generated = generate_flashcards_from_topic(topic, number_of_items)
-        if not flashcards_generated:
-            st.error("Failed to generate flashcards.")
-            return False
+    st.session_state.generate_quiz = False
+    st.session_state.generate_flashcards = False
 
 def display_flashcards():
     if 'flashcards' in st.session_state and st.session_state.flashcards:
@@ -246,9 +228,119 @@ def display_current_question():
     question_tuple = st.session_state.questions[st.session_state.current_question_index]
     question, options, correct_answer_index, explanation = question_tuple
     st.write(question)
+ # i cant figure out how to get rid of the explanation and review button after you press the review button at the end
+    selected_option = st.radio("Choose the correct answer:", options, key=f"option{st.session_state.current_question_index}")
+
+    submit_placeholder = st.empty()
+    next_placeholder = st.empty()
+
+    if not st.session_state.answer_submitted:
+        # show submit button if answer not submitted yet
+        if submit_placeholder.button("Submit Answer", key=f"submit{st.session_state.current_question_index}"):
+            check_answer(selected_option, options, correct_answer_index, explanation)
+            st.session_state.answer_submitted = True
+            submit_placeholder.empty() # remove submit button
+            # display explanation
+            st.info(f"{explanation}")
+            # determine the label for the next button
+            button_label = "Review" if st.session_state.current_question_index == len(st.session_state.questions) - 1 else "Next Question"
+            next_placeholder.button(button_label, key=f"next{st.session_state.current_question_index}")
+    elif st.session_state.answer_submitted:
+        if st.session_state.answer_submitted:
+            st.info(f"{explanation}")
+            button_label = "Review" if st.session_state.current_question_index == len(st.session_state.questions) - 1 else "Next Question"
+            if next_placeholder.button(button_label, key=f"next{st.session_state.current_question_index}"):
+                if button_label == "Review":
+                    handle_quiz_end()  
+                else:
+                    next_question()
+
+def next_question():
+    if st.session_state.current_question_index < len(st.session_state.questions) - 1:
+        st.session_state.current_question_index += 1
+        st.session_state.show_next = False
+        st.session_state.answer_submitted = False
+        st.experimental_rerun()
+    else:
+        handle_quiz_end()
+
+def check_answer(option, options, correct_answer_index, explanation):
+    if options.index(option) == correct_answer_index:
+        st.success("Correct!")
+        st.session_state.correct_answers += 1
+    else:
+        st.error(f"Incorrect!")
     
-    disabled = st.session_state.answer_submitted
+    st.session_state.answer_submitted = True
+
+def capitalize_topic(topic):
+    words = topic.split()
+    capitalized_words = [word if word[0].isupper() else word.capitalize() for word in words]
+    return ' '.join(capitalized_words)
     
+def get_letter_grade(correct, total):
+    if total == 0: return 'N/A'  # division by zero 
+    percentage = (correct / total) * 100
+    if percentage >= 90: return 'A'
+    elif percentage >= 80: return 'B'
+    elif percentage >= 70: return 'C'
+    elif percentage >= 60: return 'D'
+    else: return 'F'
+        
+# color dictionary
+grade_color = {
+    'A': '#4CAF50',  # Green
+    'B': '#90EE90',  # Light Green
+    'C': '#FFC107',  # Amber
+    'D': '#FF9800',  # Orange
+    'F': '#F44336',  # Red
+}
+
+def handle_quiz_end():
+    st.session_state.show_next = False
+    st.session_state.answer_submitted = False
+    st.session_state.display_quiz = False  
+
+    # display results
+    correct_answers = st.session_state.correct_answers
+    total_questions = len(st.session_state.questions)
+    letter_grade = get_letter_grade(correct_answers, total_questions)
+    grade_color_style = f"color: {grade_color[letter_grade]};"
+    score = f"{correct_answers} out of {total_questions}"
+
+    st.balloons()
+    st.markdown(f"Quiz Finished! You got {score} correct. Your grade: <span style='{grade_color_style}'>{letter_grade}</span>", unsafe_allow_html=True)
+
+    # restart button
+    if st.button("Restart Quiz", key="restart_quiz"):
+        st.session_state.questions = random.sample(st.session_state.questions, len(st.session_state.questions))
+        st.session_state.current_question_index = 0
+        st.session_state.correct_answers = 0
+        st.session_state.show_next = False
+        st.session_state.answer_submitted = False
+        st.session_state.display_quiz = True
+        st.experimental_rerun()
+
+with st.sidebar:
+    st.header("Quiz History")
+    for index, quiz in enumerate(st.session_state.quiz_history):
+        topic_display = quiz['topic']
+        if st.button(f"Replay {topic_display} Quiz", key=f"replay_{index}"):
+            st.session_state.questions = quiz['questions']
+            st.session_state.correct_answers = 0
+            st.session_state.current_question_index = 0
+            st.session_state.show_next = False
+            st.session_state.answer_submitted = False
+            st.experimental_rerun()
+        
+        scores = quiz.get('scores', [])  
+        if len(scores) > 1:
+            st.write(f"{topic_display} Grades:")
+            for score, grade in scores:
+                st.write(f"{grade} ({score})")
+
+if __name__ == "__main__":
+    main_screen()
     if not disabled:
         option = st.radio("Choose the correct answer:", options, key=f"option{st.session_state.current_question_index}")
         submit_placeholder = st.empty()
