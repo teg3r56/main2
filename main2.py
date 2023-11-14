@@ -3,6 +3,7 @@ import openai
 import ast
 import random
 import time
+import math
 from openai import OpenAI
 
 client = OpenAI(api_key=st.secrets["OPEN_API_KEY"])
@@ -89,12 +90,13 @@ def parse_flashcards(content):
 
 def update_progress_bar():
     progress = 0
-    for _ in range(100):
-        # increasing sleep time as it gets closer to 90%
-        sleep_time = 0.05 * (1 + (progress / 30)) if progress < 90 else 0.05
+    max_delay = 0.25  # maximum delay at 90% progress
+    while progress < 90:
+        delay_factor = (progress / 90) ** 2  # exponential growth factor
+        sleep_time = max_delay * delay_factor
         time.sleep(sleep_time)
         progress += 1
-        st.session_state.progress_bar.progress(min(progress, 100))
+        st.session_state.progress_bar.progress(progress)
 
 def generate_questions_from_topic(topic, number_of_items):
 
@@ -139,7 +141,9 @@ def generate_questions_from_topic(topic, number_of_items):
                     st.session_state.current_question_index = 0
                     st.session_state.correct_answers = 0
                     st.session_state.display_quiz = True
-                    st.session_state.progress_bar.progress(100)
+                    quiz_ready = True 
+                    if quiz_ready:
+                        st.session_state.progress_bar.progress(100)
                     return True
                 else:
                     st.error("Could not parse the API response into quiz questions.")
@@ -161,6 +165,18 @@ if 'quiz_history' not in st.session_state:
     st.session_state.quiz_history = []
 
 def main_screen():
+    if 'choice' not in st.session_state:
+        st.session_state.choice = None
+    if 'quiz_started' not in st.session_state:
+        st.session_state.quiz_started = False
+    if 'review_ready' not in st.session_state:
+        st.session_state.review_ready = False
+    if 'generate_pressed' not in st.session_state:
+        st.session_state.generate_pressed = False
+    if 'last_answer_was_correct' not in st.session_state:
+        st.session_state.last_answer_was_correct = None
+    if 'last_explanation' not in st.session_state:
+        st.session_state.last_explanation = ''
     if 'progress_bar_placeholder' not in st.session_state:
         st.session_state.progress_bar_placeholder = st.empty()
     if 'quiz_history' not in st.session_state:
@@ -185,28 +201,49 @@ def main_screen():
     }
     </style>""", unsafe_allow_html=True)
 
+    if 'quiz_started' not in st.session_state:
+        st.session_state.quiz_started = False
+
+    if 'review_ready' not in st.session_state:
+        st.session_state.review_ready = False
+
     col1, col2 = st.columns(2)
     with col1:
         if st.button("Generate a Quiz"):
             st.session_state.choice = "quiz"
+            st.session_state.generate_pressed = False
     with col2:
         if st.button("Generate Flashcards"):
             st.session_state.choice = "flashcard"
+            st.session_state.generate_pressed = False
 
-    if topic and 'choice' in st.session_state:
-        number_of_items = st.number_input("Number of Questions", min_value=1, max_value=40, value=5)
-
+    # Show the number of questions and generate button only if quiz not started and no choice has been made yet
+    if st.session_state.choice and not st.session_state.quiz_started and not st.session_state.generate_pressed:
+        number_of_questions = st.number_input("Number of Questions", min_value=1, max_value=40, value=5, key='number_of_questions')
         if st.button("Generate"):
+            st.session_state.generate_pressed = True
             if st.session_state.choice == "quiz":
-                generate_questions_from_topic(topic, number_of_items)
+                generate_questions_from_topic(topic, number_of_questions)
             elif st.session_state.choice == "flashcard":
-                generate_flashcards_from_topic(topic, number_of_items)
+                generate_flashcards_from_topic(topic, number_of_questions)
 
     if st.session_state.get('display_quiz', False):
         display_current_question()
 
-    st.session_state.generate_quiz = False
-    st.session_state.generate_flashcards = False
+    if st.session_state.get('show_results', False):
+        display_results()
+    
+    if 'restart_quiz' in st.session_state and st.session_state.restart_quiz:
+        st.session_state.quiz_started = False
+        st.session_state.choice = None
+
+def generate_quiz_or_flashcards(topic, number_of_items):
+    if st.session_state.choice == "quiz":
+        quiz_generated = generate_questions_from_topic(topic, number_of_items)
+    elif st.session_state.choice == "flashcard":
+        flashcards_generated = generate_flashcards_from_topic(topic, number_of_items)
+
+    st.experimental_rerun()
 
 def display_flashcards():
     if 'flashcards' in st.session_state and st.session_state.flashcards:
@@ -222,37 +259,84 @@ def display_flashcards():
             else:
                 st.session_state.current_flashcard_index = 0
             st.experimental_rerun()
-            
+
+def check_answer(option, options, correct_answer_index, explanation):
+    if options.index(option) == correct_answer_index:
+        st.session_state.correct_answers += 1
+        st.session_state.last_answer_was_correct = True
+    else:
+        st.session_state.last_answer_was_correct = False
+    
+    st.session_state.last_explanation = explanation
+    st.session_state.answer_submitted = True
+
 def display_current_question():
-    question_tuple = st.session_state.questions[st.session_state.current_question_index]
-    question, options, correct_answer_index, explanation = question_tuple
-    st.write(question)
- # i cant figure out how to get rid of the explanation and review button after you press the review button at the end
-    selected_option = st.radio("Choose the correct answer:", options, key=f"option{st.session_state.current_question_index}")
+    if st.session_state.get('display_quiz', False) and st.session_state.questions:
+        question_tuple = st.session_state.questions[st.session_state.current_question_index]
+        question, options, correct_answer_index, explanation = question_tuple
+        
+        # display question
+        st.write(question)
 
-    submit_placeholder = st.empty()
-    next_placeholder = st.empty()
+        selected_option = st.radio("Choose the correct answer:", options, key=f"option{st.session_state.current_question_index}")
 
-    if not st.session_state.answer_submitted:
-        # show submit button if answer not submitted yet
-        if submit_placeholder.button("Submit Answer", key=f"submit{st.session_state.current_question_index}"):
-            check_answer(selected_option, options, correct_answer_index, explanation)
-            st.session_state.answer_submitted = True
-            submit_placeholder.empty() # remove submit button
-            # display explanation
-            st.info(f"{explanation}")
-            # determine the label for the next button
-            button_label = "Review" if st.session_state.current_question_index == len(st.session_state.questions) - 1 else "Next Question"
-            next_placeholder.button(button_label, key=f"next{st.session_state.current_question_index}")
-    elif st.session_state.answer_submitted:
-        if st.session_state.answer_submitted:
-            st.info(f"{explanation}")
-            button_label = "Review" if st.session_state.current_question_index == len(st.session_state.questions) - 1 else "Next Question"
-            if next_placeholder.button(button_label, key=f"next{st.session_state.current_question_index}"):
-                if button_label == "Review":
-                    handle_quiz_end()  
-                else:
-                    next_question()
+        if not st.session_state.get('answer_submitted', False):
+            if st.button("Submit Answer"):
+                check_answer(selected_option, options, correct_answer_index, explanation)
+
+                # if its rhe last question, prepare review button
+                if st.session_state.current_question_index == len(st.session_state.questions) - 1:
+                    st.session_state.review_ready = True
+                    st.session_state.generate_pressed = False  
+                st.experimental_rerun()
+        else:
+            if st.session_state.last_answer_was_correct:
+                st.success("Correct!")
+            else:
+                st.error("Incorrect!")
+            st.info(explanation)
+
+            if st.session_state.get('review_ready', False):
+                if st.button("Review"):
+                    handle_quiz_end()
+            elif st.button("Next Question", key="next_question"):
+                next_question()
+
+def display_results():
+    if st.session_state.show_results:
+        correct_answers = st.session_state.correct_answers
+        total_questions = len(st.session_state.questions)
+        letter_grade = get_letter_grade(correct_answers, total_questions)
+        grade_color_style = f"color: {grade_color[letter_grade]};"
+        score = f"{correct_answers} out of {total_questions}"
+
+        if not st.session_state.get('results_displayed', False):
+            st.balloons()
+            st.session_state.results_displayed = True
+
+        st.markdown(f"Quiz Finished! You got {score} correct. Your grade: <span style='{grade_color_style}'>{letter_grade}</span>", unsafe_allow_html=True)
+
+        if st.button("Restart Quiz"):
+            restart_quiz()
+
+def restart_quiz():
+    st.session_state.show_results = False
+    st.session_state.quiz_started = False
+
+    # reset the quiz state
+    st.session_state.questions = random.sample(st.session_state.questions, len(st.session_state.questions))
+    st.session_state.current_question_index = 0
+    st.session_state.correct_answers = 0
+    st.session_state.show_next = False
+    st.session_state.answer_submitted = False
+    st.session_state.display_quiz = True
+    
+    st.session_state.generate_pressed = False
+
+    st.session_state.last_answer_was_correct = None
+    st.session_state.last_explanation = ''
+    
+    st.experimental_rerun()
 
 def next_question():
     if st.session_state.current_question_index < len(st.session_state.questions) - 1:
@@ -263,12 +347,13 @@ def next_question():
     else:
         handle_quiz_end()
 
-def check_answer(option, options, correct_answer_index, explanation):
-    if options.index(option) == correct_answer_index:
-        st.success("Correct!")
+def check_answer(selected_option, options, correct_answer_index, explanation):
+    if options.index(selected_option) == correct_answer_index:
         st.session_state.correct_answers += 1
+        st.session_state.last_answer_was_correct = True
     else:
-        st.error(f"Incorrect!")
+        st.session_state.last_answer_was_correct = False
+    st.session_state.last_explanation = explanation
     
     st.session_state.answer_submitted = True
 
@@ -296,29 +381,18 @@ grade_color = {
 }
 
 def handle_quiz_end():
-    st.session_state.show_next = False
-    st.session_state.answer_submitted = False
+    st.session_state.quiz_started = False
     st.session_state.display_quiz = False  
+    st.session_state.show_results = True
 
-    # display results
-    correct_answers = st.session_state.correct_answers
-    total_questions = len(st.session_state.questions)
-    letter_grade = get_letter_grade(correct_answers, total_questions)
-    grade_color_style = f"color: {grade_color[letter_grade]};"
-    score = f"{correct_answers} out of {total_questions}"
+    if 'submit_placeholder' in st.session_state:
+        st.session_state.submit_placeholder.empty()
+    if 'next_placeholder' in st.session_state:
+        st.session_state.next_placeholder.empty()
+    if 'explanation_placeholder' in st.session_state:
+        st.session_state.explanation_placeholder.empty()
 
-    st.balloons()
-    st.markdown(f"Quiz Finished! You got {score} correct. Your grade: <span style='{grade_color_style}'>{letter_grade}</span>", unsafe_allow_html=True)
-
-    # restart button
-    if st.button("Restart Quiz", key="restart_quiz"):
-        st.session_state.questions = random.sample(st.session_state.questions, len(st.session_state.questions))
-        st.session_state.current_question_index = 0
-        st.session_state.correct_answers = 0
-        st.session_state.show_next = False
-        st.session_state.answer_submitted = False
-        st.session_state.display_quiz = True
-        st.experimental_rerun()
+    st.experimental_rerun()
 
 with st.sidebar:
     st.header("Quiz History")
