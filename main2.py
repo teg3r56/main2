@@ -41,45 +41,52 @@ def parse_questions(content):
         st.error(f"Error while parsing content: {e}")
         return None
         
-def generate_flashcards_from_topic(topic, number_of_flashcards):
-    with st.spinner('Creating your flashcards...'):
-        try:
+def generate_flashcards_from_topic(topic, number_of_items):
+
+    if 'progress_bar' not in st.session_state:
+            st.session_state.progress_bar = st.progress(0)
+
+    update_progress_bar()
+
+    try:
             response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 temperature=0.1,
                 messages=[
                     {
                         "role": "system",
-                        "content": f"Generate a list of key concepts and definitions about {topic}. Please provide exactly {number_of_flashcards} flashcards. Format the output as a Python list, with each flashcard as a tuple containing the concept and its definition."
+                        "content": f"Generate {number_of_items} flashcards on the topic of {topic}. Each flashcard should be formatted as a tuple containing a unique number, the concept, and its definition."
                     },
                     {
                         "role": "user", 
-                        "content": f"Create flashcards for key concepts about {topic} with exactly {number_of_flashcards} flashcards. Format the output as: [('concept', 'definition'), ...]"
+                        "content": f"Generate exactly {number_of_items} flashcards about {topic}, formatted as: [('1', 'Concept 1', 'Definition 1'), ('2', 'Concept 2', 'Definition 2')], where each tuple contains a unique number, the concept, and its definition."
                     }
                 ]
             )
 
             content = response.choices[0].message.content.strip()
             flashcards = parse_flashcards(content)
+            st.write(content)
 
             if flashcards:
                 st.session_state.flashcards = flashcards
                 st.session_state.current_flashcard_index = 0
+                st.session_state.display_flashcards = True
                 return True
             else:
                 st.error("Could not parse the API response into flashcards.")
                 return False
-        except Exception as e:
-            st.error(f"An error occurred: {str(e)}")
-            return False
+    except Exception as e:
+        st.error(f"An error occurred: {str(e)}")
+        return False
 
 def parse_flashcards(content):
     try:
         valid_flashcards = ast.literal_eval(content)
-        if isinstance(valid_flashcards, list) and all(isinstance(flashcard, tuple) and len(flashcard) == 2 for flashcard in valid_flashcards):
+        if isinstance(valid_flashcards, list) and all(isinstance(flashcard, tuple) and len(flashcard) == 3 for flashcard in valid_flashcards):
             return valid_flashcards
         else:
-            st.error("The API response is not in the expected format of a list of tuples.")
+            st.error("The API response is not in the expected format of a list of tuples with three elements each.")
             return None
     except SyntaxError as e:
         st.error(f"Syntax error while parsing content: {e}")
@@ -165,6 +172,10 @@ if 'quiz_history' not in st.session_state:
     st.session_state.quiz_history = []
 
 def main_screen():
+    if 'load_next_question' not in st.session_state:
+        st.session_state.load_next_question = False
+    if 'display_flashcards' not in st.session_state:
+        st.session_state.display_flashcards = False
     if 'choice' not in st.session_state:
         st.session_state.choice = None
     if 'quiz_started' not in st.session_state:
@@ -211,24 +222,33 @@ def main_screen():
     with col1:
         if st.button("Generate a Quiz"):
             st.session_state.choice = "quiz"
-            st.session_state.generate_pressed = False
+            st.session_state.generate_pressed = False  # Reset this flag when a choice is made
     with col2:
         if st.button("Generate Flashcards"):
             st.session_state.choice = "flashcard"
-            st.session_state.generate_pressed = False
+            st.session_state.generate_pressed = False  # Reset this flag when a choice is made
 
-    # Show the number of questions and generate button only if quiz not started and no choice has been made yet
-    if st.session_state.choice and not st.session_state.quiz_started and not st.session_state.generate_pressed:
-        number_of_questions = st.number_input("Number of Questions", min_value=1, max_value=40, value=5, key='number_of_questions')
-        if st.button("Generate"):
+    number_input_placeholder = st.empty()
+    generate_button_placeholder = st.empty()
+
+    if st.session_state.choice and not st.session_state.generate_pressed:
+        number_of_questions = number_input_placeholder.number_input("Number of Questions", min_value=1, max_value=40, value=5, key='number_of_questions')
+        if generate_button_placeholder.button("Generate"):
             st.session_state.generate_pressed = True
             if st.session_state.choice == "quiz":
                 generate_questions_from_topic(topic, number_of_questions)
+                number_input_placeholder.empty()
+                generate_button_placeholder.empty()
             elif st.session_state.choice == "flashcard":
                 generate_flashcards_from_topic(topic, number_of_questions)
+                number_input_placeholder.empty()
+                generate_button_placeholder.empty()
 
     if st.session_state.get('display_quiz', False):
         display_current_question()
+
+    if st.session_state.get('display_flashcards', False):
+        display_flashcards()
 
     if st.session_state.get('show_results', False):
         display_results()
@@ -247,18 +267,28 @@ def generate_quiz_or_flashcards(topic, number_of_items):
 
 def display_flashcards():
     if 'flashcards' in st.session_state and st.session_state.flashcards:
-        current_flashcard = st.session_state.flashcards[st.session_state.current_flashcard_index]
-        concept, definition = current_flashcard
+        total_flashcards = len(st.session_state.flashcards)
+        selected_flashcard_index = st.select_slider(
+            "Select Flashcard",
+            options=list(range(total_flashcards)),
+            value=st.session_state.current_flashcard_index
+        )
+        
+        st.session_state.current_flashcard_index = selected_flashcard_index
+        current_flashcard = st.session_state.flashcards[selected_flashcard_index]
 
-        if st.button(concept, key=f"flashcard{st.session_state.current_flashcard_index}"):
+        concept, definition = current_flashcard[1], current_flashcard[2]
+        if 'show_definition' not in st.session_state:
+            st.session_state.show_definition = [False] * total_flashcards
+        
+        if st.button(concept, key=f"flashcard{selected_flashcard_index}"):
+            st.session_state.show_definition[selected_flashcard_index] = True
+
+        if st.session_state.show_definition[selected_flashcard_index]:
             st.info(definition)
 
-        if st.button("Next", key="next_flashcard"):
-            if st.session_state.current_flashcard_index < len(st.session_state.flashcards) - 1:
-                st.session_state.current_flashcard_index += 1
-            else:
-                st.session_state.current_flashcard_index = 0
-            st.experimental_rerun()
+        if st.session_state.current_flashcard_index != selected_flashcard_index:
+            st.session_state.show_definition = [False] * total_flashcards
 
 def check_answer(option, options, correct_answer_index, explanation):
     if options.index(option) == correct_answer_index:
@@ -270,58 +300,82 @@ def check_answer(option, options, correct_answer_index, explanation):
     st.session_state.last_explanation = explanation
     st.session_state.answer_submitted = True
 
+if 'submit_button_placeholder' not in st.session_state:
+    st.session_state.submit_button_placeholder = st.empty()
+if 'next_button_placeholder' not in st.session_state:
+    st.session_state.next_button_placeholder = st.empty()
+if 'message_placeholder' not in st.session_state:
+    st.session_state.message_placeholder = st.empty()
+if 'explanation_placeholder' not in st.session_state:
+    st.session_state.explanation_placeholder = st.empty()
+
 def display_current_question():
     if st.session_state.get('display_quiz', False) and st.session_state.questions:
         question_tuple = st.session_state.questions[st.session_state.current_question_index]
         question, options, correct_answer_index, explanation = question_tuple
         
-        # display question
+        # Display question
         st.write(question)
-
+        
+        # Display options
         selected_option = st.radio("Choose the correct answer:", options, key=f"option{st.session_state.current_question_index}")
 
+        # Button and explanation placeholders
+        submit_button_placeholder = st.empty()
+        next_button_placeholder = st.empty()
+        message_placeholder = st.empty()
+        explanation_placeholder = st.empty()
+
+        # If an answer has not been submitted, show the "Submit Answer" button
         if not st.session_state.get('answer_submitted', False):
-            if st.button("Submit Answer"):
+            if submit_button_placeholder.button("Submit Answer"):
+                # Answer has been submitted
+                st.session_state.answer_submitted = True
+                # Check the answer
                 check_answer(selected_option, options, correct_answer_index, explanation)
-
-                # if its rhe last question, prepare review button
-                if st.session_state.current_question_index == len(st.session_state.questions) - 1:
-                    st.session_state.review_ready = True
-                    st.session_state.generate_pressed = False  
-                st.experimental_rerun()
+                # Show the correct/incorrect message and explanation
+                if st.session_state.last_answer_was_correct:
+                    message_placeholder.success("Correct!")
+                else:
+                    message_placeholder.error("Incorrect!")
+                explanation_placeholder.info(explanation)
+                # Change the placeholder for the "Next Question" or "Review" button
+                submit_button_placeholder.empty()
+                if st.session_state.current_question_index < len(st.session_state.questions) - 1:
+                    next_button_placeholder.button("Next Question", on_click=next_question)
+                else:
+                    # Last question, show "Review" button
+                    next_button_placeholder.button("Review", on_click=handle_quiz_end)
         else:
+            # Show the result message and explanation
             if st.session_state.last_answer_was_correct:
-                st.success("Correct!")
+                message_placeholder.success("Correct!")
             else:
-                st.error("Incorrect!")
-            st.info(explanation)
-
-            if st.session_state.get('review_ready', False):
-                if st.button("Review"):
-                    handle_quiz_end()
-            elif st.button("Next Question", key="next_question"):
-                next_question()
+                message_placeholder.error("Incorrect!")
+            explanation_placeholder.info(explanation)
+            # Only show the "Next Question" button if it's not the last question
+            if st.session_state.current_question_index < len(st.session_state.questions) - 1:
+                next_button_placeholder.button("Next Question", on_click=next_question)
+            elif st.session_state.current_question_index == len(st.session_state.questions) - 1:
+                # Last question, show "Review" button
+                next_button_placeholder.button("Review", on_click=handle_quiz_end)
 
 def display_results():
-    if st.session_state.show_results:
-        correct_answers = st.session_state.correct_answers
-        total_questions = len(st.session_state.questions)
-        letter_grade = get_letter_grade(correct_answers, total_questions)
-        grade_color_style = f"color: {grade_color[letter_grade]};"
-        score = f"{correct_answers} out of {total_questions}"
-
-        if not st.session_state.get('results_displayed', False):
-            st.balloons()
-            st.session_state.results_displayed = True
-
-        st.markdown(f"Quiz Finished! You got {score} correct. Your grade: <span style='{grade_color_style}'>{letter_grade}</span>", unsafe_allow_html=True)
-
-        if st.button("Restart Quiz"):
-            restart_quiz()
+    # Function to display results
+    correct_answers = st.session_state.correct_answers
+    total_questions = len(st.session_state.questions)
+    letter_grade = get_letter_grade(correct_answers, total_questions)
+    grade_color_style = f"color: {grade_color[letter_grade]};"
+    score = f"{correct_answers} out of {total_questions}"
+    st.markdown(f"Quiz Finished! You got {score} correct. Your grade: <span style='{grade_color_style}'>{letter_grade}</span>", unsafe_allow_html=True)
+    if st.button("Restart Quiz"):
+        restart_quiz()  
 
 def restart_quiz():
     st.session_state.show_results = False
     st.session_state.quiz_started = False
+    st.session_state.generate_pressed = False  # Ensure 'Generate' button stays hidden
+    st.session_state.choice = None  # Reset the choice
 
     # reset the quiz state
     st.session_state.questions = random.sample(st.session_state.questions, len(st.session_state.questions))
@@ -330,8 +384,6 @@ def restart_quiz():
     st.session_state.show_next = False
     st.session_state.answer_submitted = False
     st.session_state.display_quiz = True
-    
-    st.session_state.generate_pressed = False
 
     st.session_state.last_answer_was_correct = None
     st.session_state.last_explanation = ''
@@ -339,13 +391,16 @@ def restart_quiz():
     st.experimental_rerun()
 
 def next_question():
+    # Move to the next question without calling st.experimental_rerun() here
     if st.session_state.current_question_index < len(st.session_state.questions) - 1:
         st.session_state.current_question_index += 1
-        st.session_state.show_next = False
+        # Reset the answer submitted state
         st.session_state.answer_submitted = False
-        st.experimental_rerun()
     else:
         handle_quiz_end()
+
+    # Set a flag to indicate that we need to load the next question
+    st.session_state.load_next_question = True
 
 def check_answer(selected_option, options, correct_answer_index, explanation):
     if options.index(selected_option) == correct_answer_index:
@@ -381,18 +436,10 @@ grade_color = {
 }
 
 def handle_quiz_end():
+    # Function to handle the end of the quiz
     st.session_state.quiz_started = False
-    st.session_state.display_quiz = False  
+    st.session_state.display_quiz = False
     st.session_state.show_results = True
-
-    if 'submit_placeholder' in st.session_state:
-        st.session_state.submit_placeholder.empty()
-    if 'next_placeholder' in st.session_state:
-        st.session_state.next_placeholder.empty()
-    if 'explanation_placeholder' in st.session_state:
-        st.session_state.explanation_placeholder.empty()
-
-    st.experimental_rerun()
 
 with st.sidebar:
     st.header("Quiz History")
