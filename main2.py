@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import openai
 import ast
 import random
@@ -6,7 +7,7 @@ import time
 import math
 from openai import OpenAI
 
-client = OpenAI(api_key=st.secrets["OPEN_API_KEY"])
+client = OpenAI(api_key="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")
 
 def calculate_delay(percent_complete, number_of_items):
     
@@ -66,12 +67,12 @@ def generate_flashcards_from_topic(topic, number_of_items):
 
             content = response.choices[0].message.content.strip()
             flashcards = parse_flashcards(content)
-            st.write(content)
 
             if flashcards:
                 st.session_state.flashcards = flashcards
                 st.session_state.current_flashcard_index = 0
                 st.session_state.display_flashcards = True
+                st.session_state.show_definition = [False] * len(flashcards)  
                 return True
             else:
                 st.error("Could not parse the API response into flashcards.")
@@ -266,29 +267,58 @@ def generate_quiz_or_flashcards(topic, number_of_items):
     st.experimental_rerun()
 
 def display_flashcards():
-    if 'flashcards' in st.session_state and st.session_state.flashcards:
-        total_flashcards = len(st.session_state.flashcards)
-        selected_flashcard_index = st.select_slider(
-            "Select Flashcard",
-            options=list(range(total_flashcards)),
-            value=st.session_state.current_flashcard_index
-        )
+    if 'show_definition' not in st.session_state:
+        st.session_state.show_definition = [False] * len(st.session_state.get('flashcards', []))
+    if 'current_flashcard_index' not in st.session_state:
+        st.session_state.current_flashcard_index = 0
+
+    total_flashcards = len(st.session_state.flashcards)
+    current_index = st.session_state.current_flashcard_index
+    flashcard = st.session_state.flashcards[current_index]
+    concept, definition = flashcard[1], flashcard[2]
+    showing_definition = st.session_state.show_definition[current_index]
+
+    html_content = f"""
+        <div style="cursor: pointer; padding: 16px; border: 2px solid #4CAF50; border-radius: 10px;
+                    text-align: center; margin: 10px 0; background-color: #f9f9f9; box-shadow: 2px 2px 10px rgba(0,0,0,0.1);">
+            {definition if showing_definition else concept}
+        </div>
+    """
+
+    # Use Streamlit Components to render the HTML content as a clickable element
+    clicked = components.html(html_content, height=100)
+
+    # Detect if the flashcard was clicked
+    if clicked:
+        st.session_state.show_definition[current_index] = not showing_definition
+
+    # Pagination buttons
+    pagination_container = st.container()
+    with pagination_container:
+        # Use columns to align the buttons: one for 'Previous', one for each flashcard, and one for 'Next'
+        cols = st.columns([1] + [1]*total_flashcards + [1])
         
-        st.session_state.current_flashcard_index = selected_flashcard_index
-        current_flashcard = st.session_state.flashcards[selected_flashcard_index]
-
-        concept, definition = current_flashcard[1], current_flashcard[2]
-        if 'show_definition' not in st.session_state:
-            st.session_state.show_definition = [False] * total_flashcards
+        # Previous button
+        if cols[0].button("← Previous", key="prev"):
+            new_index = max(0, st.session_state.current_flashcard_index - 1)
+            st.session_state.current_flashcard_index = new_index
+            st.session_state.show_definition[new_index] = False
         
-        if st.button(concept, key=f"flashcard{selected_flashcard_index}"):
-            st.session_state.show_definition[selected_flashcard_index] = True
+        # Dynamically generate buttons based on the number of flashcards
+        for i in range(1, total_flashcards + 1):
+            if cols[i].button(str(i), key=f"flashcard_page_{i}"):
+                st.session_state.current_flashcard_index = i - 1
+                st.session_state.show_definition = [False] * total_flashcards
+        
+        # Next button
+        if cols[-1].button("Next →", key="next"):
+            new_index = min(total_flashcards - 1, st.session_state.current_flashcard_index + 1)
+            st.session_state.current_flashcard_index = new_index
+            st.session_state.show_definition[new_index] = False
 
-        if st.session_state.show_definition[selected_flashcard_index]:
-            st.info(definition)
-
-        if st.session_state.current_flashcard_index != selected_flashcard_index:
-            st.session_state.show_definition = [False] * total_flashcards
+# Ensure 'show_definition' is initialized
+if 'show_definition' not in st.session_state:
+    st.session_state.show_definition = [False] * len(st.session_state.get('flashcards', []))
 
 def check_answer(option, options, correct_answer_index, explanation):
     if options.index(option) == correct_answer_index:
@@ -436,7 +466,6 @@ grade_color = {
 }
 
 def handle_quiz_end():
-    # Function to handle the end of the quiz
     st.session_state.quiz_started = False
     st.session_state.display_quiz = False
     st.session_state.show_results = True
