@@ -80,6 +80,8 @@ def generate_flashcards_from_topic(topic, number_of_items):
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
         return False
+    finally:
+        st.session_state.progress_bar.empty()
 
 def parse_flashcards(content):
     try:
@@ -172,6 +174,16 @@ if 'questions' not in st.session_state:
 if 'quiz_history' not in st.session_state:
     st.session_state.quiz_history = []
 
+def reset_display_states():
+    """Reset states related to the display of quizzes and flashcards."""
+    st.session_state.display_flashcards = False
+    st.session_state.display_quiz = False
+    st.session_state.show_results = False
+    st.session_state.quiz_started = False
+    st.session_state.review_ready = False
+    st.session_state.show_next = False
+    st.session_state.answer_submitted = False
+
 def main_screen():
     if 'load_next_question' not in st.session_state:
         st.session_state.load_next_question = False
@@ -223,11 +235,11 @@ def main_screen():
     with col1:
         if st.button("Generate a Quiz"):
             st.session_state.choice = "quiz"
-            st.session_state.generate_pressed = False  # Reset this flag when a choice is made
+            st.session_state.generate_pressed = False  
     with col2:
         if st.button("Generate Flashcards"):
             st.session_state.choice = "flashcard"
-            st.session_state.generate_pressed = False  # Reset this flag when a choice is made
+            st.session_state.generate_pressed = False 
 
     number_input_placeholder = st.empty()
     generate_button_placeholder = st.empty()
@@ -235,15 +247,16 @@ def main_screen():
     if st.session_state.choice and not st.session_state.generate_pressed:
         number_of_questions = number_input_placeholder.number_input("Number of Questions", min_value=1, max_value=40, value=5, key='number_of_questions')
         if generate_button_placeholder.button("Generate"):
+            # reset display states before generating new content
+            reset_display_states()
             st.session_state.generate_pressed = True
             if st.session_state.choice == "quiz":
                 generate_questions_from_topic(topic, number_of_questions)
-                number_input_placeholder.empty()
-                generate_button_placeholder.empty()
             elif st.session_state.choice == "flashcard":
                 generate_flashcards_from_topic(topic, number_of_questions)
-                number_input_placeholder.empty()
-                generate_button_placeholder.empty()
+            number_input_placeholder.empty()
+            generate_button_placeholder.empty()
+            st.experimental_rerun()
 
     if st.session_state.get('display_quiz', False):
         display_current_question()
@@ -266,17 +279,6 @@ def generate_quiz_or_flashcards(topic, number_of_items):
 
     st.experimental_rerun()
 
-def change_flashcard(new_index):
-    new_index = max(0, min(new_index, len(st.session_state.flashcards) - 1))
-    if new_index != st.session_state.current_flashcard_index:
-        st.session_state.current_flashcard_index = new_index
-        # We reset show_definition only if we are changing the flashcard to avoid redundant updates
-        st.session_state.show_definition = [False] * len(st.session_state.flashcards)
-
-# Callback function for flipping cards
-def toggle_definition(index):
-    st.session_state.show_definition[index] = not st.session_state.show_definition[index]
-
 def display_flashcards():
     total_flashcards = len(st.session_state.flashcards)
     current_index = st.session_state.current_flashcard_index
@@ -284,13 +286,12 @@ def display_flashcards():
     concept, definition = flashcard[1], flashcard[2]
     showing_definition = st.session_state.show_definition[current_index]
 
-    # Button to flip the card
+    # button to "flip" the card
     st.button('Show Definition' if not showing_definition else 'Show Concept',
               key=f'flip_{current_index}',
               on_click=toggle_definition,
               args=(current_index,))
 
-    # Custom HTML and Style
     concept_color = "#dbdcdd"  # concept text color
     html_content = f"""
     <div style="
@@ -313,30 +314,25 @@ def display_flashcards():
     components.html(html_content, height=200)
 
 
-    # Pagination buttons
-    if total_flashcards > 1:  # Only display navigation buttons if there is more than one flashcard
+    # pages pagination
+    if total_flashcards > 1:  
         pagination_cols = [1] + [1] * total_flashcards + [1]
         cols = st.columns(pagination_cols)
 
-        # Previous button
         if cols[0].button("Previous"):
             change_flashcard(current_index - 1)
 
-        # Dynamically generate buttons for pagination
         for i in range(total_flashcards):
             index_button_key = f"page_{i}"
-            # Add the current page number to the key to make each key unique across the card index
+            # add the current page number to the key to make each key unique for the index
             if cols[i + 1].button(f"{i + 1}", key=index_button_key):
                 change_flashcard(i)
 
-        # Next button
         if cols[-1].button("Next"):
             change_flashcard(current_index + 1)
 
 def toggle_definition(index):
     st.session_state.show_definition[index] = not st.session_state.show_definition[index]
-    # force rerun to immediately reflect the change
-    st.experimental_rerun()
 
 def change_flashcard(new_index):
     new_index = max(0, min(new_index, len(st.session_state.flashcards) - 1))
@@ -370,54 +366,44 @@ def display_current_question():
         question_tuple = st.session_state.questions[st.session_state.current_question_index]
         question, options, correct_answer_index, explanation = question_tuple
         
-        # Display question
         st.write(question)
         
-        # Display options
         selected_option = st.radio("Choose the correct answer:", options, key=f"option{st.session_state.current_question_index}")
 
-        # Button and explanation placeholders
+        # button/explanation placeholders
         submit_button_placeholder = st.empty()
         next_button_placeholder = st.empty()
         message_placeholder = st.empty()
         explanation_placeholder = st.empty()
 
-        # If an answer has not been submitted, show the "Submit Answer" button
+        # answer has not been submitted, show the button
         if not st.session_state.get('answer_submitted', False):
             if submit_button_placeholder.button("Submit Answer"):
-                # Answer has been submitted
+                # answer has been submitted
                 st.session_state.answer_submitted = True
-                # Check the answer
                 check_answer(selected_option, options, correct_answer_index, explanation)
-                # Show the correct/incorrect message and explanation
                 if st.session_state.last_answer_was_correct:
                     message_placeholder.success("Correct!")
                 else:
                     message_placeholder.error("Incorrect!")
                 explanation_placeholder.info(explanation)
-                # Change the placeholder for the "Next Question" or "Review" button
                 submit_button_placeholder.empty()
                 if st.session_state.current_question_index < len(st.session_state.questions) - 1:
                     next_button_placeholder.button("Next Question", on_click=next_question)
                 else:
-                    # Last question, show "Review" button
                     next_button_placeholder.button("Review", on_click=handle_quiz_end)
         else:
-            # Show the result message and explanation
             if st.session_state.last_answer_was_correct:
                 message_placeholder.success("Correct!")
             else:
                 message_placeholder.error("Incorrect!")
             explanation_placeholder.info(explanation)
-            # Only show the "Next Question" button if it's not the last question
             if st.session_state.current_question_index < len(st.session_state.questions) - 1:
                 next_button_placeholder.button("Next Question", on_click=next_question)
             elif st.session_state.current_question_index == len(st.session_state.questions) - 1:
-                # Last question, show "Review" button
                 next_button_placeholder.button("Review", on_click=handle_quiz_end)
 
 def display_results():
-    # Function to display results
     correct_answers = st.session_state.correct_answers
     total_questions = len(st.session_state.questions)
     letter_grade = get_letter_grade(correct_answers, total_questions)
@@ -430,8 +416,8 @@ def display_results():
 def restart_quiz():
     st.session_state.show_results = False
     st.session_state.quiz_started = False
-    st.session_state.generate_pressed = False  # Ensure 'Generate' button stays hidden
-    st.session_state.choice = None  # Reset the choice
+    st.session_state.generate_pressed = False  
+    st.session_state.choice = None  
 
     # reset the quiz state
     st.session_state.questions = random.sample(st.session_state.questions, len(st.session_state.questions))
@@ -447,15 +433,12 @@ def restart_quiz():
     st.experimental_rerun()
 
 def next_question():
-    # Move to the next question without calling st.experimental_rerun() here
     if st.session_state.current_question_index < len(st.session_state.questions) - 1:
         st.session_state.current_question_index += 1
-        # Reset the answer submitted state
         st.session_state.answer_submitted = False
     else:
         handle_quiz_end()
 
-    # Set a flag to indicate that we need to load the next question
     st.session_state.load_next_question = True
 
 def check_answer(selected_option, options, correct_answer_index, explanation):
