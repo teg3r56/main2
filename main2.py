@@ -7,7 +7,7 @@ import time
 import math
 from openai import OpenAI
 
-client = OpenAI(api_key="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")
+client = OpenAI(api_key=st.secrets["OPEN_API_KEY"])
 
 def calculate_delay(percent_complete, number_of_items):
     
@@ -266,59 +266,85 @@ def generate_quiz_or_flashcards(topic, number_of_items):
 
     st.experimental_rerun()
 
-def display_flashcards():
-    if 'show_definition' not in st.session_state:
-        st.session_state.show_definition = [False] * len(st.session_state.get('flashcards', []))
-    if 'current_flashcard_index' not in st.session_state:
-        st.session_state.current_flashcard_index = 0
+def change_flashcard(new_index):
+    new_index = max(0, min(new_index, len(st.session_state.flashcards) - 1))
+    if new_index != st.session_state.current_flashcard_index:
+        st.session_state.current_flashcard_index = new_index
+        # We reset show_definition only if we are changing the flashcard to avoid redundant updates
+        st.session_state.show_definition = [False] * len(st.session_state.flashcards)
 
+# Callback function for flipping cards
+def toggle_definition(index):
+    st.session_state.show_definition[index] = not st.session_state.show_definition[index]
+
+def display_flashcards():
     total_flashcards = len(st.session_state.flashcards)
     current_index = st.session_state.current_flashcard_index
     flashcard = st.session_state.flashcards[current_index]
     concept, definition = flashcard[1], flashcard[2]
     showing_definition = st.session_state.show_definition[current_index]
 
+    # Button to flip the card
+    st.button('Show Definition' if not showing_definition else 'Show Concept',
+              key=f'flip_{current_index}',
+              on_click=toggle_definition,
+              args=(current_index,))
+
+    # Custom HTML and Style
+    concept_color = "#dbdcdd"  # concept text color
     html_content = f"""
-        <div style="cursor: pointer; padding: 16px; border: 2px solid #4CAF50; border-radius: 10px;
-                    text-align: center; margin: 10px 0; background-color: #f9f9f9; box-shadow: 2px 2px 10px rgba(0,0,0,0.1);">
-            {definition if showing_definition else concept}
-        </div>
+    <div style="
+        border: 2px solid #2a2e36;
+        border-radius: 7px;
+        padding: 20px;
+        font-size: 20px;
+        font-color: #f6f6f7;
+        background-color: #262730;
+        text-align: center;
+        box-shadow: 0 2px 4px 0 rgba(155,155,255,0.2);
+    ">
+        <h2 style="color: {concept_color if not showing_definition else '#dbdcdd'};">{'Concept' if not showing_definition else 'Definition'}</h2>
+        <p style="
+            font-size: 18px;
+            color: #b1b3b5;
+        ">{concept if not showing_definition else definition}</p>
+    </div>
     """
+    components.html(html_content, height=200)
 
-    # Use Streamlit Components to render the HTML content as a clickable element
-    clicked = components.html(html_content, height=100)
-
-    # Detect if the flashcard was clicked
-    if clicked:
-        st.session_state.show_definition[current_index] = not showing_definition
 
     # Pagination buttons
-    pagination_container = st.container()
-    with pagination_container:
-        # Use columns to align the buttons: one for 'Previous', one for each flashcard, and one for 'Next'
-        cols = st.columns([1] + [1]*total_flashcards + [1])
-        
-        # Previous button
-        if cols[0].button("← Previous", key="prev"):
-            new_index = max(0, st.session_state.current_flashcard_index - 1)
-            st.session_state.current_flashcard_index = new_index
-            st.session_state.show_definition[new_index] = False
-        
-        # Dynamically generate buttons based on the number of flashcards
-        for i in range(1, total_flashcards + 1):
-            if cols[i].button(str(i), key=f"flashcard_page_{i}"):
-                st.session_state.current_flashcard_index = i - 1
-                st.session_state.show_definition = [False] * total_flashcards
-        
-        # Next button
-        if cols[-1].button("Next →", key="next"):
-            new_index = min(total_flashcards - 1, st.session_state.current_flashcard_index + 1)
-            st.session_state.current_flashcard_index = new_index
-            st.session_state.show_definition[new_index] = False
+    if total_flashcards > 1:  # Only display navigation buttons if there is more than one flashcard
+        pagination_cols = [1] + [1] * total_flashcards + [1]
+        cols = st.columns(pagination_cols)
 
-# Ensure 'show_definition' is initialized
-if 'show_definition' not in st.session_state:
-    st.session_state.show_definition = [False] * len(st.session_state.get('flashcards', []))
+        # Previous button
+        if cols[0].button("Previous"):
+            change_flashcard(current_index - 1)
+
+        # Dynamically generate buttons for pagination
+        for i in range(total_flashcards):
+            index_button_key = f"page_{i}"
+            # Add the current page number to the key to make each key unique across the card index
+            if cols[i + 1].button(f"{i + 1}", key=index_button_key):
+                change_flashcard(i)
+
+        # Next button
+        if cols[-1].button("Next"):
+            change_flashcard(current_index + 1)
+
+def toggle_definition(index):
+    st.session_state.show_definition[index] = not st.session_state.show_definition[index]
+    # force rerun to immediately reflect the change
+    st.experimental_rerun()
+
+def change_flashcard(new_index):
+    new_index = max(0, min(new_index, len(st.session_state.flashcards) - 1))
+    if new_index != st.session_state.current_flashcard_index:
+        st.session_state.current_flashcard_index = new_index
+        st.session_state.show_definition = [False] * len(st.session_state.flashcards)
+        # force rerun to immediately reflect the change
+        st.experimental_rerun()
 
 def check_answer(option, options, correct_answer_index, explanation):
     if options.index(option) == correct_answer_index:
@@ -469,24 +495,6 @@ def handle_quiz_end():
     st.session_state.quiz_started = False
     st.session_state.display_quiz = False
     st.session_state.show_results = True
-
-with st.sidebar:
-    st.header("Quiz History")
-    for index, quiz in enumerate(st.session_state.quiz_history):
-        topic_display = quiz['topic']
-        if st.button(f"Replay {topic_display} Quiz", key=f"replay_{index}"):
-            st.session_state.questions = quiz['questions']
-            st.session_state.correct_answers = 0
-            st.session_state.current_question_index = 0
-            st.session_state.show_next = False
-            st.session_state.answer_submitted = False
-            st.experimental_rerun()
-        
-        scores = quiz.get('scores', [])  
-        if len(scores) > 1:
-            st.write(f"{topic_display} Grades:")
-            for score, grade in scores:
-                st.write(f"{grade} ({score})")
 
 if __name__ == "__main__":
     main_screen()
