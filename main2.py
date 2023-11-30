@@ -222,9 +222,11 @@ def main_screen():
     
     st.markdown("""
         <style>
-        .st-emotion-cache-1kx1cls {
-            position: relative;
-            width: 451px;
+        .st-co.st-cn.st-cm.st-cl {
+            border-top-color: rgb(72 255 202 / 60%);
+            border-bottom-color: rgb(60 197 157 / 66%);
+            border-left-color: rgb(72 255 202 / 50%);
+            border-right-color: rgb(60 197 157 / 66%);
         }
         </style>""", unsafe_allow_html=True)
     
