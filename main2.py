@@ -185,6 +185,8 @@ def reset_display_states():
     st.session_state.answer_submitted = False
 
 def main_screen():
+    if 'Questions_or_Flashcards' not in st.session_state:
+        st.session_state.Questions_or_Flashcards = "Number of Questions"
     if 'load_next_question' not in st.session_state:
         st.session_state.load_next_question = False
     if 'display_flashcards' not in st.session_state:
@@ -203,8 +205,6 @@ def main_screen():
         st.session_state.last_explanation = ''
     if 'progress_bar_placeholder' not in st.session_state:
         st.session_state.progress_bar_placeholder = st.empty()
-    if 'quiz_history' not in st.session_state:
-        st.session_state.quiz_history = []
     if 'show_next' not in st.session_state:
         st.session_state.show_next = False
     if 'answer_submitted' not in st.session_state:
@@ -214,17 +214,32 @@ def main_screen():
     if 'quiz_or_flashcard' not in st.session_state:
         st.session_state.quiz_or_flashcard = None
 
-    st.title("Teague Coughlin Study Tool")
+    apply_css_styles()
+
+    st.title("QuizOn Study Tool")   
+
+    st.markdown('<p class="gpt-font">Created By Teague Coughlin</p>', unsafe_allow_html=True)
+    
+    st.markdown("""
+        <style>
+        .st-emotion-cache-1kx1cls {
+            position: relative;
+            width: 451px;
+        }
+        </style>""", unsafe_allow_html=True)
+    
+    st.markdown("""
+        <style>
+        .st-bt.st-bs.st-br.st-bq {
+            border-top-color: rgb(72 255 202 / 30%);
+            border-bottom-color: rgb(60 197 157 / 46%);
+            border-left-color: rgb(72 255 202 / 30%);
+            border-right-color: rgb(60 197 157 / 46%);
+        }
+        </style>""", unsafe_allow_html=True)
     
     topic = st.text_input("Enter the topic or notes you want to study:")
-
-    st.markdown("""
-    <style>
-    div.stButton > button:first-child {
-        width: 100%;
-    }
-    </style>""", unsafe_allow_html=True)
-
+    
     if 'quiz_started' not in st.session_state:
         st.session_state.quiz_started = False
 
@@ -232,20 +247,40 @@ def main_screen():
         st.session_state.review_ready = False
 
     col1, col2 = st.columns(2)
+
+    selected_option = st.session_state.get('selected_option', '')    
+
     with col1:
-        if st.button("Generate a Quiz"):
+        st.markdown("<div class='flex-container'>", unsafe_allow_html=True)
+        if st.button("Generate a Quiz", key="generate_quiz_button", 
+                     on_click=lambda: st.session_state.update({'selected_option': 'quiz'})):
             st.session_state.choice = "quiz"
-            st.session_state.generate_pressed = False  
+            st.session_state.Questions_or_Flashcards = "Number of Questions"
+            st.session_state.generate_pressed = False
+
     with col2:
-        if st.button("Generate Flashcards"):
+        st.markdown("<div class='flex-container'>", unsafe_allow_html=True)
+        if st.button("Generate Flashcards", key="generate_flashcards_button", 
+                     on_click=lambda: st.session_state.update({'selected_option': 'flashcard'})):
             st.session_state.choice = "flashcard"
-            st.session_state.generate_pressed = False 
+            st.session_state.Questions_or_Flashcards = "Number of Flashcards"
+            st.session_state.generate_pressed = False
 
     number_input_placeholder = st.empty()
     generate_button_placeholder = st.empty()
 
+    if 'selected_option' in st.session_state:
+        if st.session_state.selected_option == 'quiz':
+            st.markdown(
+                "<style>#generate_quiz_button { background-color: white !important; color: black !important; }</style>", 
+                unsafe_allow_html=True)
+        elif st.session_state.selected_option == 'flashcard':
+            st.markdown(
+                "<style>#generate_flashcards_button { background-color: white !important; color: black !important; }</style>", 
+                unsafe_allow_html=True)
+
     if st.session_state.choice and not st.session_state.generate_pressed:
-        number_of_questions = number_input_placeholder.number_input("Number of Questions", min_value=1, max_value=40, value=5, key='number_of_questions')
+        number_of_questions = number_input_placeholder.number_input(f"{st.session_state.Questions_or_Flashcards}", min_value=1, max_value=40, value=5, key='number_of_questions')
         if generate_button_placeholder.button("Generate"):
             # reset display states before generating new content
             reset_display_states()
@@ -312,7 +347,6 @@ def display_flashcards():
     </div>
     """
     components.html(html_content, height=200)
-
 
     # pages pagination
     if total_flashcards > 1:  
@@ -450,11 +484,6 @@ def check_answer(selected_option, options, correct_answer_index, explanation):
     st.session_state.last_explanation = explanation
     
     st.session_state.answer_submitted = True
-
-def capitalize_topic(topic):
-    words = topic.split()
-    capitalized_words = [word if word[0].isupper() else word.capitalize() for word in words]
-    return ' '.join(capitalized_words)
     
 def get_letter_grade(correct, total):
     if total == 0: return 'N/A'  # division by zero 
@@ -478,6 +507,97 @@ def handle_quiz_end():
     st.session_state.quiz_started = False
     st.session_state.display_quiz = False
     st.session_state.show_results = True
+
+def apply_css_styles():
+    """Applies CSS styles to the Streamlit app."""
+    styles = """
+    <style>
+    .st-emotion-cache-bdfrcy {
+        width: 95%;
+        padding-bottom: 1px;
+        line-height: normal;
+        color: rgb(253 242 242);
+    }
+    .st-emotion-cache-19rxjzo {
+        transition: background-color 0.9s ease; 
+        display: inline-flex;
+        -webkit-box-align: center;
+        align-items: center;
+        -webkit-box-pack: center;
+        justify-content: center;
+        font-weight: 100;
+        text-size-adjust: 100%;
+        padding: 0.25rem 0.75rem;
+        border-radius: 0.7rem;
+        min-height: 38.4px;
+        margin: 0px;
+        line-height: 1.6;
+        color: #fafafa;
+        width: auto;
+        user-select: none;
+        background-color: rgb(14 50 239 / 40%);
+        border: 1px solid rgb(90 169 223 / 52%);
+    }
+    .st-emotion-cache-ffhzg2 {
+        position: absolute;
+        opacity: 0.9;
+        background: linear-gradient(120deg, #006994, darkblue);
+        color: rgb(250, 250, 250);
+        inset: 0px;
+        overflow: hidden;
+    }
+    .st-emotion-cache-19rxjzo:hover {
+        border-color: rgb(33, 86, 122);
+        color: rgb(255, 255, 255);
+        -webkit-box-shadow:0px 0px 3px 1px rgba(0,0,224,0.86);
+        -moz-box-shadow: 0px 0px 2px 3px rgba(0,0,224,0.86);
+        box-shadow: 0px 0px 2px 1px rgba(0,0,224,0.86);
+    }
+    .st-emotion-cache-19rxjzo:focus:not(:active) {
+        background-color: #013784;
+        border-color: rgb(33, 86, 122);
+        color: rgb(255, 255, 255);
+        -webkit-box-shadow:0px 0px 3px 6px rgba(68,68,250);
+        -moz-box-shadow: 0px 0px 2px 3px rgba(0,0,224,0.86);
+        box-shadow: 0px 0px 2px 1px rgba(0,0,224,0.86);
+    }
+    .st-emotion-cache-19rxjzo:active {
+        opacity: 0.9;
+        backdrop-filter: blur(10px);
+        background-color: #013784;
+        border-color: rgb(33, 86, 122);
+        color: rgb(255, 255, 255);
+    }
+    
+    .st-emotion-cache-1hdbmx1.focused {
+        border-top-color: rgb(72 255 202 / 30%);
+        border-bottom-color: rgb(60 197 157 / 46%);
+        border-left-color: rgb(72 255 202 / 30%);
+        border-right-color: rgb(60 197 157 / 46%);
+    }
+
+    .st-emotion-cache-1hdbmx1 {
+        border-top-color: rgb(72 255 202 / 30%);
+        border-bottom-color: rgb(60 197 157 / 46%);
+        border-left-color: rgb(72 255 202 / 30%);
+        border-right-color: rgb(60 197 157 / 46%);
+    }
+    .st-emotion-cache-1hgxyac {
+        margin: 0px;
+        border: none;
+        height: 100%;
+        display: flex;
+        -webkit-box-align: center;
+        align-items: center;
+        width: 32px;
+        -webkit-box-pack: center;
+        justify-content: center;
+    }
+    .gpt-font { font sans-serif; font-size:1rem; margin-left: 3px; opacity: 1; margin-top: -10px; }
+    div.stButton > button:first-child { width: 100%; }
+    </style>
+    """
+    st.markdown(styles, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main_screen()
