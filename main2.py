@@ -1,13 +1,18 @@
 import streamlit as st
 import streamlit.components.v1 as components
+import streamlit_extras
+import streamlit_dynamic_css
+from streamlit_dynamic_css import streamlit_dynamic_css
 import openai
 import ast
 import random
 import time
 import math
+from streamlit_javascript import st_javascript
+from streamlit_extras.stylable_container import stylable_container
 from openai import OpenAI
 
-client = OpenAI(api_key=st.secrets["OPEN_API_KEY"])
+client = OpenAI(api_key="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")
 
 def calculate_delay(percent_complete, number_of_items):
     
@@ -164,7 +169,6 @@ def generate_questions_from_topic(topic, number_of_items):
     finally:
         st.session_state.progress_bar.empty()
 
-
 if 'questions' not in st.session_state:
     st.session_state.questions = []
     st.session_state.correct_answers = 0
@@ -213,12 +217,14 @@ def main_screen():
         st.session_state.quiz_generated = False
     if 'quiz_or_flashcard' not in st.session_state:
         st.session_state.quiz_or_flashcard = None
+    
+    hue_shift_square()
 
     apply_css_styles()
 
-    st.title("QuizOn Study Tool")   
+    st.title("Quiz Generator")
 
-    st.markdown('<p class="gpt-font">Created By Teague Coughlin</p>', unsafe_allow_html=True)
+    #st.markdown('<p class="gpt-font">Created By Teague Coughlin</p>', unsafe_allow_html=True)
     
     st.markdown("""
         <style>
@@ -510,17 +516,76 @@ def handle_quiz_end():
     st.session_state.display_quiz = False
     st.session_state.show_results = True
 
+def hue_shift_square():
+    css_string = """
+            .hue-block {{
+                position: absolute;
+                height: auto;
+                width: 100%;
+                padding: 1rem;
+                border-radius: 15px;
+                background: black;
+                background-size: 1000% 1000%;
+                opacity: 0.7;
+                animation: gradient-shift 30s linear infinite;
+                background-image: linear-gradient(
+                    120deg,
+                    #0000FF,
+                    #0000E0,
+                    #4682B4,
+                    #0000A0,
+                    #000080,
+                    #000060,
+                    #000040,
+                    #000020,
+                    #000010,
+                    #0000FF
+                );
+                z-index: 1;
+            }}
+
+            @keyframes gradient-shift {{
+                0%, 100% {{ background-position: 100% 50%; }}
+                50% {{ background-position: 0% 50%; }}
+            }}
+    """
+    # Use the custom component to apply the CSS
+    streamlit_dynamic_css(".st-emotion-cache-crkc8h", css_string)
+
 def apply_css_styles():
-    """Applies CSS styles to the Streamlit app."""
     styles = """
     <style>
+    .st-by .st-ci {
+        caret-color: rgb(255, 255, 255);
+        color: rgb(255, 255, 255);
+    }
+    h1 {
+        font-family: "Source Sans Pro", sans-serif;
+        font-weight: 700;
+        color: rgb(232 232 232);
+        padding: 1.25rem 0px 1rem;
+        margin: 0px;
+        line-height: 1.2;
+    }
+    .st-bw {
+        color: rgb(249, 250, 250);
+    }
+    .st-emotion-cache-ue6h4q {
+        color: rgb(250, 250, 250);
+    }
+    .st-bv {
+        background-color: rgb(91 192 255 / 57%);
+    }
+    .st-fa {
+        background-color: #8a9cb800;
+    }
     .st-emotion-cache-bdfrcy {
         width: 95%;
         padding-bottom: 1px;
         line-height: normal;
         color: rgb(253 242 242);
     }
-    .st-emotion-cache-19rxjzo {
+    .st-emotion-cache-1kt38h1 {
         transition: background-color 0.9s ease; 
         display: inline-flex;
         -webkit-box-align: center;
@@ -538,9 +603,20 @@ def apply_css_styles():
         width: auto;
         user-select: none;
         background-color: rgb(14 50 239 / 40%);
-        border: 1px solid rgb(90 169 223 / 52%);
+        border: 1px solid rgb(255, 255, 255 0.4);
     }
-    .st-emotion-cache-ffhzg2 {
+    .st-emotion-cache-19j208r {
+        position: fixed;
+        top: 0px;
+        left: 0px;
+        right: 0px;
+        height: 2.875rem;
+        background: #161b22;
+        outline: none;
+        z-index: 999990;
+        display: block;
+    }
+    .st-emotion-cache-1pfffnf {
         position: absolute;
         opacity: 0.9;
         background: linear-gradient(120deg, #006994, darkblue);
@@ -548,41 +624,43 @@ def apply_css_styles():
         inset: 0px;
         overflow: hidden;
     }
-    .st-emotion-cache-19rxjzo:hover {
-        border-color: rgb(33, 86, 122);
+    .st-emotion-cache-1kt38h1:hover {
+        border-color: rgb(17 22 24);
         color: rgb(255, 255, 255);
-        -webkit-box-shadow:0px 0px 3px 1px rgba(0,0,224,0.86);
-        -moz-box-shadow: 0px 0px 2px 3px rgba(0,0,224,0.86);
-        box-shadow: 0px 0px 2px 1px rgba(0,0,224,0.86);
+        box-shadow: 0px 0px 2px 1px rgba(0,0,224,0.00);
     }
-    .st-emotion-cache-19rxjzo:focus:not(:active) {
-        background-color: #013784;
-        border-color: rgb(33, 86, 122);
-        color: rgb(255, 255, 255);
-        -webkit-box-shadow:0px 0px 3px 6px rgba(68,68,250);
-        -moz-box-shadow: 0px 0px 2px 3px rgba(0,0,224,0.86);
-        box-shadow: 0px 0px 2px 1px rgba(0,0,224,0.86);
+    .st-emotion-cache-1kt38h1:focus:not(:active) {
+        background-color: rgb(212, 228, 250, 0.45);
+        border-color: rgb(17 22 24);
+        color: rgb(0 0 0);
+        box-shadow: 0px 0px 2px 1px rgba(255,255,224,0.00);
     }
-    .st-emotion-cache-19rxjzo:active {
+    .st-emotion-cache-1kt38h1:active {
         opacity: 0.9;
         backdrop-filter: blur(10px);
-        background-color: #013784;
-        border-color: rgb(33, 86, 122);
-        color: rgb(255, 255, 255);
+        background-color: rgb(212, 228, 250, 0.45);
+        border-color: rgb(17 22 24);
+        color: rgb(0 0 0);
     }
     
-    .st-emotion-cache-1hdbmx1.focused {
+    .st-emotion-cache-1aof7ch.focused {
         border-top-color: rgb(72 255 202 / 30%);
         border-bottom-color: rgb(60 197 157 / 46%);
         border-left-color: rgb(72 255 202 / 30%);
         border-right-color: rgb(60 197 157 / 46%);
     }
 
-    .st-emotion-cache-1hdbmx1 {
+    .st-emotion-cache-1aof7ch {
         border-top-color: rgb(72 255 202 / 30%);
         border-bottom-color: rgb(60 197 157 / 46%);
         border-left-color: rgb(72 255 202 / 30%);
         border-right-color: rgb(60 197 157 / 46%);
+    }
+    .st-emotion-cache-bdfrcy {
+        width: 100%;
+        padding-bottom: 1px;
+        line-height: normal;
+        color: rgb(0 0 0);
     }
     .st-emotion-cache-1hgxyac {
         margin: 0px;
