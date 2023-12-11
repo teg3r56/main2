@@ -1,13 +1,10 @@
 import streamlit as st
 import streamlit.components.v1 as components
-import streamlit_extras
 import openai
 import ast
 import random
 import time
 import math
-from streamlit_javascript import st_javascript
-from streamlit_extras.stylable_container import stylable_container
 from openai import OpenAI
 
 client = OpenAI(api_key="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")
