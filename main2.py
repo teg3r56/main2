@@ -7,7 +7,7 @@ import time
 import math
 from openai import OpenAI
 
-client = OpenAI(api_key="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")
+client = OpenAI(api_key=st.secrets["OPEN_API_KEY"])
 
 def calculate_delay(percent_complete, number_of_items):
     
