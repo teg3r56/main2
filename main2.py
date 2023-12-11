@@ -1,8 +1,6 @@
 import streamlit as st
 import streamlit.components.v1 as components
 import streamlit_extras
-import streamlit_dynamic_css
-from streamlit_dynamic_css import streamlit_dynamic_css
 import openai
 import ast
 import random
@@ -550,8 +548,6 @@ def hue_shift_square():
             }}
     """
     # Use the custom component to apply the CSS
-    streamlit_dynamic_css(".st-emotion-cache-crkc8h", css_string)
-
 def apply_css_styles():
     styles = """
     <style>
